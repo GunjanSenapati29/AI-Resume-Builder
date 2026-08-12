@@ -1,0 +1,8 @@
+# Copy this file to "application-local.properties" (same folder) and fill
+# in your real local MySQL credentials. That exact filename is gitignored,
+# so it will never be committed - this .example file is the committed
+# template documenting what keys are needed.
+
+spring.datasource.url=jdbc:mysql://localhost:3306/skillgap_ai
+spring.datasource.username=root
+spring.datasource.password=your-mysql-password-here

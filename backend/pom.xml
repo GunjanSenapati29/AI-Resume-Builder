@@ -4,24 +4,49 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <!--
+        Phase 2: this is now a real Spring Boot application. The
+        spring-boot-starter-parent gives us managed, compatible versions
+        for every Spring dependency below (we don't pick versions for
+        spring-web/spring-data-jpa ourselves - the parent does it).
+    -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.1.0</version>
+        <relativePath/>
+    </parent>
+
     <groupId>com.skillgapai</groupId>
     <artifactId>skillgap-ai-backend</artifactId>
     <version>0.1.0</version>
     <packaging>jar</packaging>
 
-    <!--
-        Phase 1 note: this is a PLAIN Java Maven project (no Spring Boot yet).
-        We are only proving the matching logic works correctly on its own,
-        with hardcoded sample text, before wiring it into a web app in Phase 2/3.
-    -->
-
     <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <dependencies>
+        <!-- REST controllers (used starting Phase 3) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- Spring Data JPA: entities + repositories talking to MySQL -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <!-- MySQL JDBC driver -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- Apache Commons Text: gives us Levenshtein / Jaro-Winkler string
              similarity so the matcher can tolerate typos and near-spellings
              (e.g. "Sprint Boot" vs "Spring Boot"). -->
@@ -31,28 +56,27 @@
             <version>1.12.0</version>
         </dependency>
 
-        <!-- JUnit 5 for a couple of sanity tests on the matcher -->
+        <!-- Spring Boot's test starter (brings in JUnit 5 + Spring test support) -->
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>5.10.2</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <!-- Packages the app as a runnable jar and provides "mvn spring-boot:run" -->
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.13.0</version>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.skillgapai.SkillGapAiApplication</mainClass>
+                </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.2.5</version>
-            </plugin>
-            <!-- Lets us run "mvn exec:java" to try the demo without building a jar -->
+
+            <!-- Kept from Phase 1: lets us still run "mvn exec:java" to try
+                 the plain-Java matching demo without Spring involved. -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
