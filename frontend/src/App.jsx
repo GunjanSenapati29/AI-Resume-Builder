@@ -118,7 +118,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="rounded-md border border-slate-300 px-2.5 py-1 font-medium text-slate-700 hover:bg-slate-50"
+                className="rounded-md border border-slate-300 px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50"
               >
                 Log out
               </button>

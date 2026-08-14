@@ -1,13 +1,13 @@
 import { GoodIcon, WarningIcon, SeriousIcon } from './StatusIcons'
+import { STATUS_COLORS } from '../statusColors'
 
-// Fixed status palette (never themed), reserved for state - see
-// palette.md. Used only for the icon swatch and its tint, never as text
-// color (warning/serious are sub-3:1 on a light surface by design; the
-// icon + adjacent text label is the accessibility mitigation).
+// Used only for the icon swatch and its tint, never as text color
+// (warning/serious are sub-3:1 on a light surface by design; the icon +
+// adjacent text label is the accessibility mitigation).
 const VARIANTS = {
-  good: { Icon: GoodIcon, hex: '#0ca30c' },
-  warning: { Icon: WarningIcon, hex: '#fab219' },
-  serious: { Icon: SeriousIcon, hex: '#ec835a' },
+  good: { Icon: GoodIcon, hex: STATUS_COLORS.good },
+  warning: { Icon: WarningIcon, hex: STATUS_COLORS.warning },
+  serious: { Icon: SeriousIcon, hex: STATUS_COLORS.serious },
 }
 
 const MATCH_TYPE_LABEL = {
