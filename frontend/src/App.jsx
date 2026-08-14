@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import ResumeInput from './components/ResumeInput'
 import SkillsChecklist from './components/SkillsChecklist'
-import MatchResultSummary from './components/MatchResultSummary'
+import GapReportScreen from './components/GapReportScreen'
 import ProcessingScreen from './components/ProcessingScreen'
 import { submitMatch } from './api'
 
@@ -72,7 +72,7 @@ export default function App() {
             {stage === 'processing'
               ? 'Processing'
               : stage === 'result'
-                ? 'Gap Report (preview)'
+                ? 'Gap Report'
                 : 'Upload & Compare'}
           </p>
         </div>
@@ -121,7 +121,7 @@ export default function App() {
 
         {stage === 'result' && report && (
           <>
-            <MatchResultSummary report={report} />
+            <GapReportScreen report={report} />
             <button
               type="button"
               onClick={handleStartOver}
