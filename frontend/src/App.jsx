@@ -3,6 +3,7 @@ import ResumeInput from './components/ResumeInput'
 import SkillsChecklist from './components/SkillsChecklist'
 import GapReportScreen from './components/GapReportScreen'
 import ProcessingScreen from './components/ProcessingScreen'
+import HistoryScreen from './components/HistoryScreen'
 import { submitMatch } from './api'
 
 // A local POST /api/match usually finishes in well under this time.
@@ -16,6 +17,7 @@ function wait(ms) {
 }
 
 export default function App() {
+  const [view, setView] = useState('compare') // 'compare' | 'history'
   const [resumeText, setResumeText] = useState('')
   const [jdText, setJdText] = useState('')
   const [selectedSkills, setSelectedSkills] = useState({})
@@ -69,17 +71,47 @@ export default function App() {
         <div className="mx-auto max-w-3xl px-4 py-4">
           <h1 className="text-xl font-semibold text-slate-900">SkillGap AI</h1>
           <p className="text-sm text-slate-500">
-            {stage === 'processing'
-              ? 'Processing'
-              : stage === 'result'
-                ? 'Gap Report'
-                : 'Upload & Compare'}
+            {view === 'history'
+              ? 'History'
+              : stage === 'processing'
+                ? 'Processing'
+                : stage === 'result'
+                  ? 'Gap Report'
+                  : 'Upload & Compare'}
           </p>
+          <nav className="mt-3 flex gap-2 text-sm" aria-label="Screens">
+            <button
+              type="button"
+              onClick={() => setView('compare')}
+              aria-current={view === 'compare' ? 'page' : undefined}
+              className={`rounded-md px-3 py-1.5 font-medium ${
+                view === 'compare'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              Upload &amp; Compare
+            </button>
+            <button
+              type="button"
+              onClick={() => setView('history')}
+              aria-current={view === 'history' ? 'page' : undefined}
+              className={`rounded-md px-3 py-1.5 font-medium ${
+                view === 'history'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              History
+            </button>
+          </nav>
         </div>
       </header>
 
       <main className="mx-auto max-w-3xl space-y-6 px-4 py-6">
-        {stage === 'form' && (
+        {view === 'history' && <HistoryScreen />}
+
+        {view === 'compare' && stage === 'form' && (
           <form
             onSubmit={handleSubmit}
             className="space-y-6 rounded-lg border border-slate-200 bg-white p-5"
@@ -117,9 +149,9 @@ export default function App() {
           </form>
         )}
 
-        {stage === 'processing' && <ProcessingScreen />}
+        {view === 'compare' && stage === 'processing' && <ProcessingScreen />}
 
-        {stage === 'result' && report && (
+        {view === 'compare' && stage === 'result' && report && (
           <>
             <GapReportScreen report={report} />
             <button

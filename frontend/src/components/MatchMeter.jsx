@@ -1,11 +1,4 @@
-// Fixed status palette (never themed) - see the project's dataviz
-// reference. Reserved for state (good/warning/serious), never reused as
-// a plain categorical color.
-function severity(percentage) {
-  if (percentage >= 70) return { hex: '#0ca30c', label: 'Strong match' }
-  if (percentage >= 40) return { hex: '#fab219', label: 'Partial match' }
-  return { hex: '#ec835a', label: 'Needs work' }
-}
+import { matchSeverity } from '../matchSeverity'
 
 /**
  * The report's hero figure: match percentage as a large number, plus a
@@ -14,7 +7,7 @@ function severity(percentage) {
  * color doing work here.
  */
 export default function MatchMeter({ percentage, matchedCount, totalCount }) {
-  const { hex, label } = severity(percentage)
+  const { hex, label } = matchSeverity(percentage)
   const rounded = Math.round(percentage)
 
   return (

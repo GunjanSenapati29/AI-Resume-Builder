@@ -1,5 +1,6 @@
 package com.skillgapai.service;
 
+import com.skillgapai.dto.GapReportSummary;
 import com.skillgapai.dto.GapReportView;
 import com.skillgapai.entity.GapReport;
 import com.skillgapai.entity.Resume;
@@ -36,6 +37,7 @@ import java.util.Optional;
 public class ReportService {
 
     private static final String GUEST_EMAIL = "guest@skillgap.local";
+    private static final int JD_SNIPPET_LENGTH = 80;
 
     private final SkillMatchingService matchingService;
     private final UserRepository userRepository;
@@ -88,6 +90,31 @@ public class ReportService {
     @Transactional(readOnly = true)
     public Optional<GapReportView> getReport(Long id) {
         return gapReportRepository.findById(id).map(this::toView);
+    }
+
+    /**
+     * Phase 6d: past reports for the History screen, most recent first.
+     * Scoped to the same fixed guest user every report is currently
+     * attached to - once real login exists this takes the logged-in
+     * user's email instead of the constant.
+     */
+    @Transactional(readOnly = true)
+    public List<GapReportSummary> listReportHistory() {
+        return gapReportRepository.findByResume_User_EmailOrderByCreatedAtDesc(GUEST_EMAIL).stream()
+                .map(report -> new GapReportSummary(
+                        report.getId(),
+                        snippet(report.getJdText()),
+                        report.getMatchPercentage(),
+                        report.getCreatedAt()))
+                .toList();
+    }
+
+    private String snippet(String text) {
+        String trimmed = text.strip();
+        if (trimmed.length() <= JD_SNIPPET_LENGTH) {
+            return trimmed;
+        }
+        return trimmed.substring(0, JD_SNIPPET_LENGTH).stripTrailing() + "...";
     }
 
     private GapReportView toView(GapReport report) {

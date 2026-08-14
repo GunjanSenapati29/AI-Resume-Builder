@@ -38,3 +38,19 @@ export async function submitMatch({ resumeText, jdText, requiredSkills }) {
   }
   return response.json()
 }
+
+export async function fetchReportHistory() {
+  const response = await fetch('/api/reports')
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response))
+  }
+  return response.json()
+}
+
+export async function fetchReportById(id) {
+  const response = await fetch(`/api/reports/${id}`)
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response))
+  }
+  return response.json()
+}
