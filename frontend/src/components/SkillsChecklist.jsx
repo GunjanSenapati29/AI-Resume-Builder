@@ -48,6 +48,14 @@ export default function SkillsChecklist({ selectedSkills, onChange }) {
     )
   }
 
+  if (skills.length === 0) {
+    return (
+      <p className="text-sm text-slate-500">
+        No skills are available to check against yet - the skill taxonomy is empty.
+      </p>
+    )
+  }
+
   return (
     <fieldset className="space-y-2">
       <legend className="text-sm font-semibold text-slate-700">
@@ -70,7 +78,7 @@ export default function SkillsChecklist({ selectedSkills, onChange }) {
                   className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                 />
                 {skill.name}
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-slate-500">
                   ({skill.difficulty.toLowerCase()})
                 </span>
               </label>

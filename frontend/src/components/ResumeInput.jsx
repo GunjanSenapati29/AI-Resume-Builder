@@ -20,9 +20,19 @@ export default function ResumeInput({ resumeText, onResumeTextChange }) {
       return
     }
 
-    setExtracting(true)
     setExtractError('')
     setExtractedInfo('')
+
+    // Checked client-side (not just left to the backend's PDFBox error)
+    // so a wrong file type fails immediately with a plain-language
+    // message instead of waiting on a round trip first.
+    if (file.type !== 'application/pdf') {
+      setExtractError('Please upload a PDF file.')
+      event.target.value = ''
+      return
+    }
+
+    setExtracting(true)
 
     try {
       const result = await extractResumeText(file)
@@ -41,29 +51,27 @@ export default function ResumeInput({ resumeText, onResumeTextChange }) {
     <fieldset className="space-y-3">
       <legend className="text-sm font-semibold text-slate-700">Resume</legend>
 
-      <div className="flex gap-2 text-sm" role="tablist" aria-label="Resume input method">
+      <div className="flex gap-2 text-sm" role="group" aria-label="Resume input method">
         <button
           type="button"
-          role="tab"
-          aria-selected={mode === 'upload'}
+          aria-pressed={mode === 'upload'}
           onClick={() => setMode('upload')}
-          className={`rounded-md px-3 py-1.5 font-medium ${
+          className={`rounded-md px-3 py-1.5 font-medium focus:outline-none focus:ring-2 focus:ring-inset ${
             mode === 'upload'
-              ? 'bg-blue-600 text-white'
-              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              ? 'bg-blue-600 text-white focus:ring-white'
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200 focus:ring-blue-500'
           }`}
         >
           Upload PDF
         </button>
         <button
           type="button"
-          role="tab"
-          aria-selected={mode === 'paste'}
+          aria-pressed={mode === 'paste'}
           onClick={() => setMode('paste')}
-          className={`rounded-md px-3 py-1.5 font-medium ${
+          className={`rounded-md px-3 py-1.5 font-medium focus:outline-none focus:ring-2 focus:ring-inset ${
             mode === 'paste'
-              ? 'bg-blue-600 text-white'
-              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              ? 'bg-blue-600 text-white focus:ring-white'
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200 focus:ring-blue-500'
           }`}
         >
           Paste text

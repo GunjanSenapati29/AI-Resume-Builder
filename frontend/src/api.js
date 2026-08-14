@@ -33,12 +33,27 @@ async function readErrorMessage(response) {
   return text || `Request failed with status ${response.status}.`
 }
 
+// Phase 8: fetch() itself rejects (doesn't give you a response at all)
+// when the request never reaches a server - backend down, no network,
+// DNS failure. Left alone, that surfaces as a raw browser string like
+// "Failed to fetch", which fails the "clear, human message" bar just as
+// much as a blank screen would. Every network call in this file goes
+// through this instead of calling fetch() directly, so that case always
+// reads the same way.
+async function safeFetch(url, options) {
+  try {
+    return await fetch(url, options)
+  } catch {
+    throw new Error('Could not reach the server. Check your connection and try again.')
+  }
+}
+
 // Every protected endpoint (everything except /api/auth/*) goes through
 // this so a 401 (token missing/expired/invalid - see SecurityConfig on
 // the backend) always triggers the same "go back to login" behavior
 // instead of each caller having to check for it separately.
 async function protectedFetch(url, options = {}) {
-  const response = await fetch(url, {
+  const response = await safeFetch(url, {
     ...options,
     headers: { ...options.headers, ...authHeaders() },
   })
@@ -54,7 +69,7 @@ async function protectedFetch(url, options = {}) {
 }
 
 export async function signup({ name, email, password }) {
-  const response = await fetch('/api/auth/signup', {
+  const response = await safeFetch('/api/auth/signup', {
     method: 'POST',
     headers: JSON_HEADERS,
     body: JSON.stringify({ name, email, password }),
@@ -66,7 +81,7 @@ export async function signup({ name, email, password }) {
 }
 
 export async function login({ email, password }) {
-  const response = await fetch('/api/auth/login', {
+  const response = await safeFetch('/api/auth/login', {
     method: 'POST',
     headers: JSON_HEADERS,
     body: JSON.stringify({ email, password }),

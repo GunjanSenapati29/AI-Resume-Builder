@@ -118,7 +118,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="rounded-md border border-slate-300 px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50"
+                className="rounded-md border border-slate-300 px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
               >
                 Log out
               </button>
@@ -138,10 +138,10 @@ export default function App() {
               type="button"
               onClick={() => setView('compare')}
               aria-current={view === 'compare' ? 'page' : undefined}
-              className={`rounded-md px-3 py-1.5 font-medium ${
+              className={`rounded-md px-3 py-1.5 font-medium focus:outline-none focus:ring-2 focus:ring-inset ${
                 view === 'compare'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  ? 'bg-blue-600 text-white focus:ring-white'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 focus:ring-blue-500'
               }`}
             >
               Upload &amp; Compare
@@ -150,10 +150,10 @@ export default function App() {
               type="button"
               onClick={() => setView('history')}
               aria-current={view === 'history' ? 'page' : undefined}
-              className={`rounded-md px-3 py-1.5 font-medium ${
+              className={`rounded-md px-3 py-1.5 font-medium focus:outline-none focus:ring-2 focus:ring-inset ${
                 view === 'history'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  ? 'bg-blue-600 text-white focus:ring-white'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 focus:ring-blue-500'
               }`}
             >
               History
@@ -196,7 +196,7 @@ export default function App() {
 
             <button
               type="submit"
-              className="w-full rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700"
+              className="w-full rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
             >
               Compare
             </button>
@@ -211,7 +211,7 @@ export default function App() {
             <button
               type="button"
               onClick={handleStartOver}
-              className="w-full rounded-md border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50"
+              className="w-full rounded-md border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
             >
               Start a new comparison
             </button>

@@ -63,29 +63,27 @@ export default function AuthScreen({ onAuthSuccess }) {
         onSubmit={handleSubmit}
         className="space-y-4 rounded-lg border border-slate-200 bg-white p-5"
       >
-        <div className="flex gap-2 text-sm" role="tablist" aria-label="Auth mode">
+        <div className="flex gap-2 text-sm" role="group" aria-label="Auth mode">
           <button
             type="button"
-            role="tab"
-            aria-selected={mode === 'login'}
+            aria-pressed={mode === 'login'}
             onClick={() => switchMode('login')}
-            className={`flex-1 rounded-md px-3 py-1.5 font-medium ${
+            className={`flex-1 rounded-md px-3 py-1.5 font-medium focus:outline-none focus:ring-2 focus:ring-inset ${
               mode === 'login'
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                ? 'bg-blue-600 text-white focus:ring-white'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 focus:ring-blue-500'
             }`}
           >
             Log in
           </button>
           <button
             type="button"
-            role="tab"
-            aria-selected={mode === 'signup'}
+            aria-pressed={mode === 'signup'}
             onClick={() => switchMode('signup')}
-            className={`flex-1 rounded-md px-3 py-1.5 font-medium ${
+            className={`flex-1 rounded-md px-3 py-1.5 font-medium focus:outline-none focus:ring-2 focus:ring-inset ${
               mode === 'signup'
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                ? 'bg-blue-600 text-white focus:ring-white'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 focus:ring-blue-500'
             }`}
           >
             Sign up
@@ -148,7 +146,7 @@ export default function AuthScreen({ onAuthSuccess }) {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+          className="w-full rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white disabled:cursor-not-allowed disabled:bg-blue-300"
         >
           {submitting
             ? mode === 'login' ? 'Logging in...' : 'Creating account...'

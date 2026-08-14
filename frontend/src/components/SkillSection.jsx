@@ -34,7 +34,7 @@ function SkillItem({ item }) {
         )}
         <Pill>{item.difficulty.toLowerCase()}</Pill>
         {item.occurrenceCount > 1 && (
-          <span className="text-xs text-slate-400">mentioned {item.occurrenceCount} times</span>
+          <span className="text-xs text-slate-500">mentioned {item.occurrenceCount} times</span>
         )}
       </div>
       {/* The "why" - every result shows a reason, never just a verdict. */}
@@ -64,18 +64,18 @@ export default function SkillSection({ variant, title, subtitle, items, emptyTex
         </span>
         <div>
           <h2 className="text-base font-semibold text-slate-900">
-            {title} <span className="font-normal text-slate-400">({items.length})</span>
+            {title} <span className="font-normal text-slate-500">({items.length})</span>
           </h2>
           {subtitle && <p className="text-sm text-slate-500">{subtitle}</p>}
         </div>
       </div>
 
       {items.length === 0 ? (
-        <p className="mt-3 text-sm text-slate-400">{emptyText}</p>
+        <p className="mt-3 text-sm text-slate-500">{emptyText}</p>
       ) : (
         <ListTag
           className={`mt-3 divide-y divide-slate-100 ${
-            ordered ? 'list-decimal pl-9 marker:text-sm marker:text-slate-400' : ''
+            ordered ? 'list-decimal pl-9 marker:text-sm marker:text-slate-500' : ''
           }`}
         >
           {items.map((item) => (
