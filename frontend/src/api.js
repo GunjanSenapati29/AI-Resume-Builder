@@ -126,3 +126,12 @@ export async function fetchReportById(id) {
   const response = await protectedFetch(`/api/reports/${id}`)
   return response.json()
 }
+
+// Phase 9: the PDF export. Can't just be a plain <a href> link since the
+// route needs the Authorization header like every other protected
+// route - so this fetches it as a blob and the caller turns that into a
+// download (see GapReportScreen).
+export async function fetchReportPdf(id) {
+  const response = await protectedFetch(`/api/reports/${id}/pdf`)
+  return response.blob()
+}
