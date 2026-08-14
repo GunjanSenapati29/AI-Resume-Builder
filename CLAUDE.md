@@ -52,12 +52,13 @@ proficiency.
 
 | Layer | Technology |
 |---|---|
-| Frontend | React, Tailwind CSS, Recharts |
+| Frontend | React, Tailwind CSS |
 | Backend | Java, Spring Boot, Spring Security (JWT), Spring Data JPA |
 | Database | MySQL |
 | Resume parsing | Apache PDFBox |
-| Matching logic | Plain Java + string similarity (Levenshtein / Jaro-Winkler) |
-| Build tools | Maven (backend), npm (frontend), Git/GitHub |
+| Matching logic | Plain Java + hand-written Jaro-Winkler string similarity |
+| PDF export | Apache PDFBox (server-side report rendering) |
+| Build tools | Maven (backend, via the Maven Wrapper), npm (frontend), Git/GitHub |
 
 No Python. No external AI API. No embeddings/ML model for the MVP.
 
@@ -67,16 +68,21 @@ No Python. No external AI API. No embeddings/ML model for the MVP.
 User (Browser)
       |
       v
-React Frontend (Upload / Processing / Report / History / Auth)
-      |  REST API (JSON over HTTPS)
+React Frontend (Auth / Upload & Compare / Processing / Gap Report / History)
+      |  REST API (JSON over HTTPS), JWT in the Authorization header
+      v
+Spring Security — JwtAuthenticationFilter
+      |  rejects anything without a valid token, except /api/auth/**
       v
 Spring Boot Controller Layer
       |
       v
 Service Layer
-   +-- ResumeParsingService   (Apache PDFBox)
-   +-- SkillMatchingService   (taxonomy + string similarity)
-   +-- ReportService          (builds the ranked gap report)
+   +-- AuthService            (signup/login, BCrypt hashing, JWT issuing)
+   +-- ResumeParsingService    (Apache PDFBox: PDF -> plain text)
+   +-- SkillMatchingService    (taxonomy + string similarity)
+   +-- ReportService           (builds the ranked gap report, persists it)
+   +-- GapReportPdfService     (Apache PDFBox: report -> downloadable PDF)
       |
       v
 Repository Layer (Spring Data JPA)
@@ -84,6 +90,8 @@ Repository Layer (Spring Data JPA)
       v
 MySQL Database
 ```
+
+(Also documented, with more detail, in `README.md`.)
 
 ## Database schema
 
@@ -103,8 +111,9 @@ GapReport (report_id, resume_id, jd_text, matched_skills_json, missing_skills_js
 - Responsive feedback — every action gets a visible state change.
 - Accessibility is non-negotiable: WCAG AA contrast, full keyboard nav, alt text, labeled fields.
 
-Screens: Landing, Upload & Compare, Processing, Gap Report (the hero screen),
-History, Auth.
+Screens: Auth, Upload & Compare, Processing, Gap Report (the hero screen),
+History. (No separate Landing screen was ever built - an unauthenticated
+visitor lands straight on Auth.)
 
 ## Build order (work through ONE phase at a time)
 
@@ -114,12 +123,15 @@ History, Auth.
 4. Persistence: save each match as a GapReport row, add `GET /api/reports/{id}` — **DONE, see status below**
 5. Resume PDF parsing (PDFBox) with manual-paste fallback — **DONE, see status below**
 6. React screens, one at a time: 6a Upload & Compare, 6b Processing, 6c Gap Report, 6d History, 6e Auth — **DONE, see status below**
-7. Apply the visual design system consistently — no functional changes — **NEXT**
-8. Accessibility pass + empty/error states
-9. PDF export of the report
-10. README + demo script, tag `v1.0`
+7. Apply the visual design system consistently — no functional changes — **DONE, see status below**
+8. Accessibility pass + empty/error states — **DONE, see status below**
+9. PDF export of the report — **DONE, see status below**
+10. README + demo script, tag `v1.0` — **DONE, see status below**
 
 Commit after each phase with a message describing what that phase delivered.
+All 10 phases are complete and tagged `v1.0` - this list is now a build
+history, not a queue. Any further work is a new ask beyond the original
+scope, not "the next phase."
 
 ## Current status (read this first in every session)
 
@@ -209,10 +221,51 @@ Verified live in the browser (not just curl): signup, login, a Compare
 run tied to the logged-in account, logout, re-login, wrong-password
 rejection, and duplicate-email rejection all confirmed working.
 
-**Next up: Phase 7** — apply the visual design system consistently
-across all screens. No functional changes in this phase; every screen
-already works functionally as of Phase 6e (including real auth), so
-this is purely visual/UX polish.
+**Phases 7-10 are complete - v1.0 is tagged and pushed.**
+
+- **Phase 7** (visual design system) - audited all five screens against
+  the UI/UX principles above; found the system already consistent
+  screen-to-screen (each was built reusing the same conventions since
+  Phase 6a), so this fixed two real drift points rather than a broad
+  rewrite: the header's Log out button was smaller than every other
+  compact button, and the good/warning/serious status hex colors were
+  hand-typed in two places (`matchSeverity.js`, `SkillSection.jsx`) -
+  now a single source in `statusColors.js`.
+- **Phase 8** (accessibility + empty/error states) - bumped
+  `text-slate-400` informational text (fails WCAG AA at ~2.6:1) to
+  `text-slate-500` (~4.76:1); added a visible focus ring to every button
+  that lacked one; replaced an incomplete ARIA `role="tab"` pattern (no
+  arrow-key support) in the Auth and Resume-input mode switches with a
+  correct `role="group"` + `aria-pressed` toggle pattern; `api.js` now
+  catches raw network failures (backend down) and turns them into a
+  plain-language message instead of a browser error string;
+  `SkillsChecklist` handles a successfully-loaded-but-empty taxonomy
+  instead of rendering nothing; `ResumeInput` validates PDF file type
+  client-side before upload.
+- **Phase 9** (PDF export) - `export/GapReportPdfService.java` renders a
+  `GapReportView` as a PDF with PDFBox (already a dependency, reused
+  rather than adding a frontend PDF library) - manual word-wrap and
+  pagination, since PDFBox has no flowed-text support of its own.
+  `GET /api/reports/{id}/pdf` reuses `ReportService`'s existing
+  ownership check. Verified by generating real reports and reading the
+  actual PDF bytes back (not just checking a file downloaded): content
+  matched the on-screen data exactly, a 100%-match report confirmed the
+  empty-state text, and a 30-skill report caught and fixed a real
+  pagination bug (a skill's title could be stranded alone at the bottom
+  of a page with its reason on the next one). Also confirmed live in
+  the browser: clicked Download PDF on a real report, Chrome downloaded
+  and opened a valid PDF with correct content.
+- **Phase 10** (README + demo script) - `README.md` rewritten from the
+  Phase 1 stub into a full doc (overview, tech stack, architecture,
+  setup, features). `DEMO_SCRIPT.md` is a rehearsed 3-5 minute viva/
+  interview walkthrough built around a specific resume/JD/checklist
+  combination actually run through the live backend first, so its
+  quoted numbers (56% match, 5 matched, 4 missing ranked easiest-first,
+  4 underemphasized) are real, not estimated.
+
+**v1.0 is the current state of the project.** All 10 build-order phases
+are done; there is no pending "next phase" - treat any further request
+as new scope, not a continuation of the original build order.
 
 ## Definition of "outstanding" — check every screen against this
 
