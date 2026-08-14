@@ -49,6 +49,15 @@
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
+        <!-- Resume PDF parsing (Phase 5): extracts plain text from an
+             uploaded PDF so it can be fed into the same matching logic
+             that already handles pasted text. -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>3.0.7</version>
+        </dependency>
+
         <!-- MySQL JDBC driver -->
         <dependency>
             <groupId>com.mysql</groupId>
