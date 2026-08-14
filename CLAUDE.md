@@ -110,11 +110,11 @@ History, Auth.
 
 1. Plain Java matching logic (no Spring, no DB) — **DONE, see status below**
 2. MySQL schema + Spring Boot skeleton — **DONE, see status below**
-3. Wire matching logic into `POST /api/match`, tested via curl — no persistence yet — **NEXT**
-4. Persistence: save each match as a GapReport row, add `GET /api/reports/{id}`
-5. Resume PDF parsing (PDFBox) with manual-paste fallback
-6. React screens, one at a time: 6a Upload & Compare, 6b Processing, 6c Gap Report, 6d History, 6e Auth
-7. Apply the visual design system consistently — no functional changes
+3. Wire matching logic into `POST /api/match`, tested via curl — no persistence yet — **DONE, see status below**
+4. Persistence: save each match as a GapReport row, add `GET /api/reports/{id}` — **DONE, see status below**
+5. Resume PDF parsing (PDFBox) with manual-paste fallback — **DONE, see status below**
+6. React screens, one at a time: 6a Upload & Compare, 6b Processing, 6c Gap Report, 6d History, 6e Auth — **DONE, see status below**
+7. Apply the visual design system consistently — no functional changes — **NEXT**
 8. Accessibility pass + empty/error states
 9. PDF export of the report
 10. README + demo script, tag `v1.0`
@@ -123,81 +123,96 @@ Commit after each phase with a message describing what that phase delivered.
 
 ## Current status (read this first in every session)
 
-**Phase 1 is complete.** Plain Java skill-matching logic lives in
-`backend/src/main/java/com/skillgapai/`:
+**Phases 1-6d are complete.** Condensed history (full detail is in git
+log + the comments in each file):
 
-- `model/` — Skill, RequiredSkill, MatchResult, MatchType, GapAnalysisResult, Difficulty
-- `taxonomy/SkillsTaxonomy.java` — canonical skill names + synonyms + a difficulty rating
-- `matching/SkillMatchingService.java` — the core matching algorithm (exact → synonym → fuzzy, in that order)
-- `matching/StringSimilarity.java` — a hand-written Jaro-Winkler similarity function
-- `Phase1Demo.java` — a runnable demo with a hardcoded sample resume + JD
+- **Phase 1** — plain Java skill-matching logic, no Spring/DB:
+  `model/`, `taxonomy/SkillsTaxonomy.java`, `matching/SkillMatchingService.java`
+  (exact → synonym → fuzzy matching, in that order),
+  `matching/StringSimilarity.java` (hand-written Jaro-Winkler). Runnable
+  via `Phase1Demo.java`.
+- **Phase 2** — real Spring Boot app on the Maven Wrapper (`./mvnw`, no
+  system-wide Maven needed), connected to a local MySQL database called
+  `skillgap_ai`. `entity/` + `repository/` for the four schema tables;
+  `spring.jpa.hibernate.ddl-auto=update` so Hibernate creates/updates
+  tables from the `@Entity` classes directly. Every `@Lob` `String`
+  column is explicitly `LONGTEXT`/`TEXT` (Hibernate's MySQL default for
+  `@Lob` is `TINYTEXT` - 255 bytes - which is nowhere near enough for
+  resume text, JD text, or JSON skill lists).
+- **Phase 3** — `POST /api/match` (`web/MatchController.java`) wires
+  `SkillMatchingService` up over HTTP, no persistence yet.
+- **Phase 4** — persistence: each match is saved as a `GapReport` row
+  (`service/ReportService.java`), plus `GET /api/reports/{id}`.
+- **Phase 5** — resume PDF parsing via PDFBox
+  (`parsing/ResumeParsingService.java`,
+  `POST /api/resumes/extract-text`), with manual-paste as the fallback
+  path when extraction fails or the PDF has no text layer.
+- **Phase 6a-6d** — the React screens: Upload & Compare, Processing, Gap
+  Report (the hero screen), and History (`GET /api/reports` for the
+  list, `GET /api/reports/{id}` for detail).
 
-It currently builds with plain `javac`/`java` (no Maven needed yet — zero
-external dependencies). It was built and tested in a cloud sandbox that
-could not reach Maven Central, so Maven itself was never actually run there
-— **on this machine, with normal internet access, switch Phase 2 onward to
-real Maven + Spring Boot as originally planned.**
+MySQL credentials AND (as of Phase 6e) the JWT signing secret live in
+`application-local.properties`, gitignored;
+`application-local.properties.example` is the committed template - copy
+it and fill in your own values to run this locally.
 
-Two real bugs were caught by running the demo and reading the actual
-output, then fixed:
+**Phase 6e is complete.** Real auth (BCrypt + JWT), replacing the
+guest-user placeholder every report was previously attached to:
 
-- "React" was fuzzy-matched to the unrelated word "recent" (86% similar).
-  Fixed by raising the fuzzy-match threshold from 0.85 to 0.92.
-- "Spring Security" was fuzzy-matched to "Spring Boot" (a different, real
-  skill). Fixed by rejecting any fuzzy candidate that is itself a known
-  name of a different skill in the taxonomy.
+- `security/JwtService.java` issues/verifies HMAC-SHA256 JWTs (subject =
+  email, 24h expiry, configured via `jwt.expiration-ms`).
+  `security/JwtAuthenticationFilter.java` reads the
+  `Authorization: Bearer <token>` header on every request and populates
+  the security context from it.
+- `config/SecurityConfig.java` requires a valid JWT on every `/api/**`
+  route except `/api/auth/**` (signup/login); sessions are stateless;
+  CSRF is disabled (not needed for bearer-token auth - a cross-site page
+  can't set our Authorization header the way a browser auto-attaches
+  cookies). An explicit `AuthenticationEntryPoint` returns 401 for a
+  missing/invalid token, since the frontend relies on 401 specifically
+  to trigger a logout.
+- `service/AuthService.java` + `web/AuthController.java` — signup hashes
+  the password with `BCryptPasswordEncoder` (never stored/compared raw);
+  login checks the submitted password against the stored hash. Both
+  return a token on success; `/api/auth/signup` returns 409 for a
+  duplicate email, `/api/auth/login` returns 401 for a wrong
+  email/password.
+- `service/ReportService.java`, `web/MatchController.java`,
+  `web/ReportController.java` — the old fixed `guest@skillgap.local`
+  user is gone; every method now takes the logged-in user's email (read
+  from `SecurityContextHolder`, populated by the JWT filter).
+  `GET /api/reports/{id}` checks the report belongs to that user and
+  returns 404 (not 403) otherwise, so it never confirms or denies that a
+  given report id belongs to someone else's account.
+- Frontend: `components/AuthScreen.jsx` (login/signup, one screen, two
+  modes) gates the whole app in `App.jsx` - no auth, no access, no more
+  guest fallback. The JWT lives in `localStorage`; `api.js`'s
+  `protectedFetch` attaches it to every request and, on a 401, clears it
+  and forces the user back to the Auth screen.
 
-**Phase 2 is complete.** The backend is now a real Spring Boot app (Maven
-Wrapper, no system-wide Maven needed — see below), connected to a local
-MySQL database called `skillgap_ai`:
+Two real issues were caught by actually running the app and testing with
+curl, not just trusting the code:
 
-- `pom.xml` now has a `spring-boot-starter-parent` and pulls in
-  `spring-boot-starter-web`, `spring-boot-starter-data-jpa`, and
-  `mysql-connector-j`. Phase 1's plain-Java classes and its
-  `commons-text` dependency are untouched.
-- `SkillGapAiApplication.java` — the `@SpringBootApplication` entry point.
-  Run it with `./mvnw spring-boot:run` (`mvnw.cmd` on Windows). Phase 1's
-  `Phase1Demo` still works unchanged via `mvnw exec:java`.
-- `entity/` — JPA `@Entity` classes for the four schema tables: `User`,
-  `Resume`, `GapReport`, and `SkillTaxonomyEntry`. That last one is
-  deliberately not named `SkillsTaxonomy` — that name is already taken by
-  the plain-Java class in `taxonomy/`, and a later phase will likely need
-  both imported in the same file.
-- `repository/` — one empty `JpaRepository<Entity, Long>` interface per
-  entity (`UserRepository`, `ResumeRepository`, `GapReportRepository`,
-  `SkillTaxonomyEntryRepository`). No custom queries yet - Phase 3/4 will
-  add methods as real endpoints need them.
-- `spring.jpa.hibernate.ddl-auto=update` — Hibernate creates/updates
-  tables from the `@Entity` classes; there's no separate SQL schema file
-  to keep in sync by hand.
-- MySQL credentials live in `application-local.properties`, which is
-  gitignored (see `.gitignore`). `application-local.properties.example`
-  is the committed template showing what keys are needed - copy it and
-  fill in your own password to run this locally.
-- Maven itself is NOT installed system-wide on this machine. The project
-  uses the Maven Wrapper instead (`mvnw` / `mvnw.cmd` +
-  `.mvn/wrapper/`), which downloads its own pinned Maven version on
-  first run. Always invoke Maven as `./mvnw ...` (or `mvnw.cmd ...` on
-  plain Windows cmd/PowerShell), never bare `mvn`.
+- Unauthenticated requests to a protected route were returning 403, not
+  401 - Spring Security's default fallback entry point when no
+  `httpBasic()`/`formLogin()` is configured. Fixed with an explicit
+  `HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)`.
+- `spring.autoconfigure.exclude` for `UserDetailsServiceAutoConfiguration`
+  (added to stop Spring Boot auto-configuring an unused in-memory user
+  and logging a "generated security password" warning on every startup)
+  initially pointed at its Spring Boot 3 package
+  (`org.springframework.boot.autoconfigure.security.servlet...`), which
+  doesn't exist on this project's Spring Boot 4. The class moved to
+  `org.springframework.boot.security.autoconfigure...`.
 
-One real bug was caught by running the app and reading the actual schema
-(not just trusting the entity code): Hibernate's default MySQL mapping
-for a `@Lob` `String` field is `TINYTEXT` (max 255 bytes) unless told
-otherwise. That's nowhere near big enough for a resume's extracted text,
-a pasted JD, or the JSON skill lists. Fixed by adding
-`columnDefinition = "LONGTEXT"` (or `TEXT` for the shorter `synonyms`
-column) to every `@Lob` field, then dropping and letting Hibernate
-recreate the four tables so the column types actually changed.
+Verified live in the browser (not just curl): signup, login, a Compare
+run tied to the logged-in account, logout, re-login, wrong-password
+rejection, and duplicate-email rejection all confirmed working.
 
-Verified: `./mvnw spring-boot:run` starts cleanly, connects to MySQL
-(HikariPool + Tomcat both start with no errors), and
-`SHOW TABLES` / `DESCRIBE` against `skillgap_ai` confirms all four
-tables exist with the corrected column types.
-
-**Next up: Phase 3** — wire the existing matching logic into a
-`POST /api/match` endpoint, tested via curl. Still no persistence at
-this stage (that's Phase 4) - the point of Phase 3 is proving the
-Spring MVC layer can call `SkillMatchingService` end-to-end over HTTP.
+**Next up: Phase 7** — apply the visual design system consistently
+across all screens. No functional changes in this phase; every screen
+already works functionally as of Phase 6e (including real auth), so
+this is purely visual/UX polish.
 
 ## Definition of "outstanding" — check every screen against this
 
