@@ -34,6 +34,15 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- JSON (de)serialization for @RestController responses/requests and
+             ReportService's storage of match results as JSON text (Phase 4).
+             Not pulled in by spring-boot-starter-web automatically on this
+             Spring Boot version - has to be added explicitly. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jackson</artifactId>
+        </dependency>
+
         <!-- Spring Data JPA: entities + repositories talking to MySQL -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
