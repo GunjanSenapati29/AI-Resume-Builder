@@ -5,6 +5,7 @@ import com.skillgapai.dto.MatchRequest;
 import com.skillgapai.model.RequiredSkill;
 import com.skillgapai.service.ReportService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,6 +20,10 @@ import java.util.List;
  * as a GapReport row - the response is unchanged in spirit (still the
  * matched/missing/underemphasized/matchPercentage breakdown), just now
  * wrapped in a GapReportView that also carries the saved report's id.
+ * Phase 6e: this route now requires a valid JWT (see SecurityConfig);
+ * the logged-in user's email comes from SecurityContextHolder, which
+ * JwtAuthenticationFilter populated from that token earlier in the
+ * request.
  */
 @RestController
 @RequestMapping("/api")
@@ -46,7 +51,8 @@ public class MatchController {
                 .map(rs -> new RequiredSkill(rs.skillName(), rs.core()))
                 .toList();
 
-        GapReportView view = reportService.createReport(request.resumeText(), request.jdText(), requiredSkills);
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        GapReportView view = reportService.createReport(userEmail, request.resumeText(), request.jdText(), requiredSkills);
         return ResponseEntity.created(URI.create("/api/reports/" + view.id())).body(view);
     }
 }

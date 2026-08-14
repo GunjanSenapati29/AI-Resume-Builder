@@ -3,6 +3,7 @@ package com.skillgapai.web;
 import com.skillgapai.dto.GapReportSummary;
 import com.skillgapai.service.ReportService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,6 +18,10 @@ import java.util.List;
  *
  * Phase 6d: GET /api/reports - lists past reports (most recent first)
  * for the History screen.
+ *
+ * Phase 6e: both routes are scoped to the logged-in user (from the JWT,
+ * via SecurityContextHolder) - one account never sees another's history
+ * or reports.
  */
 @RestController
 @RequestMapping("/api/reports")
@@ -30,13 +35,17 @@ public class ReportController {
 
     @GetMapping
     public List<GapReportSummary> listReports() {
-        return reportService.listReportHistory();
+        return reportService.listReportHistory(currentUserEmail());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getReport(@PathVariable Long id) {
-        return reportService.getReport(id)
+        return reportService.getReport(id, currentUserEmail())
                 .<ResponseEntity<?>>map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    private String currentUserEmail() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 }

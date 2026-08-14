@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import ResumeInput from './components/ResumeInput'
 import SkillsChecklist from './components/SkillsChecklist'
 import GapReportScreen from './components/GapReportScreen'
 import ProcessingScreen from './components/ProcessingScreen'
 import HistoryScreen from './components/HistoryScreen'
-import { submitMatch } from './api'
+import AuthScreen from './components/AuthScreen'
+import { submitMatch, getToken, setToken, clearToken, onUnauthorized } from './api'
 
 // A local POST /api/match usually finishes in well under this time.
 // Without a floor, the Processing screen would flash by too fast to
@@ -16,7 +17,18 @@ function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+const USER_KEY = 'skillgap_user'
+
+function loadStoredUser() {
+  const stored = localStorage.getItem(USER_KEY)
+  return stored ? JSON.parse(stored) : null
+}
+
 export default function App() {
+  // No token stored (or a stale one) both collapse to "logged out" -
+  // whichever the token turns out to be, the first protected request
+  // will 401 and onUnauthorized clears the rest.
+  const [user, setUser] = useState(() => (getToken() ? loadStoredUser() : null))
   const [view, setView] = useState('compare') // 'compare' | 'history'
   const [resumeText, setResumeText] = useState('')
   const [jdText, setJdText] = useState('')
@@ -24,6 +36,28 @@ export default function App() {
   const [stage, setStage] = useState('form') // 'form' | 'processing' | 'result'
   const [submitError, setSubmitError] = useState('')
   const [report, setReport] = useState(null)
+
+  useEffect(() => {
+    onUnauthorized(() => {
+      setUser(null)
+      localStorage.removeItem(USER_KEY)
+    })
+  }, [])
+
+  function handleAuthSuccess({ token, name, email }) {
+    setToken(token)
+    localStorage.setItem(USER_KEY, JSON.stringify({ name, email }))
+    setUser({ name, email })
+  }
+
+  function handleLogout() {
+    clearToken()
+    localStorage.removeItem(USER_KEY)
+    setUser(null)
+    setView('compare')
+    setStage('form')
+    setReport(null)
+  }
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -65,11 +99,31 @@ export default function App() {
     setStage('form')
   }
 
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-slate-50 px-4">
+        <AuthScreen onAuthSuccess={handleAuthSuccess} />
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-3xl px-4 py-4">
-          <h1 className="text-xl font-semibold text-slate-900">SkillGap AI</h1>
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="text-xl font-semibold text-slate-900">SkillGap AI</h1>
+            <div className="flex items-center gap-3 text-sm text-slate-500">
+              <span>{user.name}</span>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="rounded-md border border-slate-300 px-2.5 py-1 font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Log out
+              </button>
+            </div>
+          </div>
           <p className="text-sm text-slate-500">
             {view === 'history'
               ? 'History'

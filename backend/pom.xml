@@ -34,6 +34,36 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- Phase 6e: password hashing (BCrypt) and the filter chain that
+             protects every /api/** route except /api/auth/**. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- Phase 6e: JWT issuing/verification. jjwt-gson (not jjwt-jackson)
+             deliberately - this Spring Boot version uses Jackson 3
+             (tools.jackson), and jjwt-jackson still pulls in classic
+             Jackson 2, which would put two incompatible Jackson versions
+             on the classpath. Gson has no such conflict. -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>0.12.6</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>0.12.6</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-gson</artifactId>
+            <version>0.12.6</version>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- JSON (de)serialization for @RestController responses/requests and
              ReportService's storage of match results as JSON text (Phase 4).
              Not pulled in by spring-boot-starter-web automatically on this

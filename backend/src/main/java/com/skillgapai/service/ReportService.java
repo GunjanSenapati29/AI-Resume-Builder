@@ -22,21 +22,18 @@ import java.util.Optional;
 
 /**
  * Phase 4: turns one match run into a persisted GapReport row (plus the
- * Resume/User rows it depends on) and builds the GapReportView the API
+ * Resume row it depends on) and builds the GapReportView the API
  * returns, either right after creating a report or later via
  * GET /api/reports/{id}.
  *
- * There's no resume upload (Phase 5) or login (Phase 6e) yet, so every
- * report is attached to one fixed "guest" User row - found by email if
- * it already exists, created once otherwise - and a fresh Resume row is
- * inserted per match. Once real auth/upload exist, the guest lookup
- * goes away and the resume/user come from the logged-in request instead;
- * nothing else in this class has to change.
+ * Phase 6e: every method takes the requesting user's email (read from
+ * the JWT by the controller, via SecurityContextHolder) instead of the
+ * old fixed "guest" placeholder - reports are now attached to, and
+ * scoped to, whoever is actually logged in.
  */
 @Service
 public class ReportService {
 
-    private static final String GUEST_EMAIL = "guest@skillgap.local";
     private static final int JD_SNIPPET_LENGTH = 80;
 
     private final SkillMatchingService matchingService;
@@ -58,11 +55,12 @@ public class ReportService {
     }
 
     @Transactional
-    public GapReportView createReport(String resumeText, String jdText, List<RequiredSkill> requiredSkills) {
-        User guest = userRepository.findByEmail(GUEST_EMAIL)
-                .orElseGet(() -> userRepository.save(new User("Guest", GUEST_EMAIL, "no-auth-yet")));
+    public GapReportView createReport(String userEmail, String resumeText, String jdText, List<RequiredSkill> requiredSkills) {
+        // Authenticated by JwtAuthenticationFilter before this is ever
+        // called, so the user is guaranteed to exist.
+        User user = userRepository.findByEmail(userEmail).orElseThrow();
 
-        Resume resume = resumeRepository.save(new Resume(guest, resumeText, LocalDateTime.now()));
+        Resume resume = resumeRepository.save(new Resume(user, resumeText, LocalDateTime.now()));
 
         GapAnalysisResult result = matchingService.analyze(resumeText, requiredSkills);
 
@@ -87,20 +85,27 @@ public class ReportService {
                 report.getCreatedAt());
     }
 
+    /**
+     * Phase 6e: scoped to the requesting user - a report that exists but
+     * belongs to someone else is reported as "not found" rather than
+     * "forbidden", so this endpoint never confirms or denies that a
+     * given report id belongs to another account.
+     */
     @Transactional(readOnly = true)
-    public Optional<GapReportView> getReport(Long id) {
-        return gapReportRepository.findById(id).map(this::toView);
+    public Optional<GapReportView> getReport(Long id, String userEmail) {
+        return gapReportRepository.findById(id)
+                .filter(report -> report.getResume().getUser().getEmail().equals(userEmail))
+                .map(this::toView);
     }
 
     /**
      * Phase 6d: past reports for the History screen, most recent first.
-     * Scoped to the same fixed guest user every report is currently
-     * attached to - once real login exists this takes the logged-in
-     * user's email instead of the constant.
+     * Phase 6e: scoped to the logged-in user's email instead of the old
+     * fixed guest placeholder.
      */
     @Transactional(readOnly = true)
-    public List<GapReportSummary> listReportHistory() {
-        return gapReportRepository.findByResume_User_EmailOrderByCreatedAtDesc(GUEST_EMAIL).stream()
+    public List<GapReportSummary> listReportHistory(String userEmail) {
+        return gapReportRepository.findByResume_User_EmailOrderByCreatedAtDesc(userEmail).stream()
                 .map(report -> new GapReportSummary(
                         report.getId(),
                         snippet(report.getJdText()),

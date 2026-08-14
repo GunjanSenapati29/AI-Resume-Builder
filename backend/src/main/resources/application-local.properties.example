@@ -6,3 +6,6 @@
 spring.datasource.url=jdbc:mysql://localhost:3306/skillgap_ai
 spring.datasource.username=root
 spring.datasource.password=your-mysql-password-here
+
+# Generate your own with: openssl rand -base64 32
+jwt.secret=replace-with-your-own-generated-secret

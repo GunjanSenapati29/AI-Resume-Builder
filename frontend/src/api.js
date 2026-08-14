@@ -1,15 +1,84 @@
 const JSON_HEADERS = { 'Content-Type': 'application/json' }
+const TOKEN_KEY = 'skillgap_token'
+
+// Phase 6e: any component that wants to react to "the token was rejected
+// (missing/expired/invalid) so the user needs to log in again" registers
+// one callback here via onUnauthorized(). Keeps every protected fetch
+// call below from having to know about App's auth state directly.
+let unauthorizedHandler = null
+
+export function onUnauthorized(handler) {
+  unauthorizedHandler = handler
+}
+
+export function getToken() {
+  return localStorage.getItem(TOKEN_KEY)
+}
+
+export function setToken(token) {
+  localStorage.setItem(TOKEN_KEY, token)
+}
+
+export function clearToken() {
+  localStorage.removeItem(TOKEN_KEY)
+}
+
+function authHeaders() {
+  const token = getToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
 
 async function readErrorMessage(response) {
   const text = await response.text()
   return text || `Request failed with status ${response.status}.`
 }
 
-export async function fetchSkills() {
-  const response = await fetch('/api/skills')
+// Every protected endpoint (everything except /api/auth/*) goes through
+// this so a 401 (token missing/expired/invalid - see SecurityConfig on
+// the backend) always triggers the same "go back to login" behavior
+// instead of each caller having to check for it separately.
+async function protectedFetch(url, options = {}) {
+  const response = await fetch(url, {
+    ...options,
+    headers: { ...options.headers, ...authHeaders() },
+  })
+  if (response.status === 401) {
+    clearToken()
+    unauthorizedHandler?.()
+    throw new Error('Your session has expired. Please log in again.')
+  }
   if (!response.ok) {
     throw new Error(await readErrorMessage(response))
   }
+  return response
+}
+
+export async function signup({ name, email, password }) {
+  const response = await fetch('/api/auth/signup', {
+    method: 'POST',
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ name, email, password }),
+  })
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response))
+  }
+  return response.json()
+}
+
+export async function login({ email, password }) {
+  const response = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ email, password }),
+  })
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response))
+  }
+  return response.json()
+}
+
+export async function fetchSkills() {
+  const response = await protectedFetch('/api/skills')
   return response.json()
 }
 
@@ -17,40 +86,28 @@ export async function extractResumeText(file) {
   const formData = new FormData()
   formData.append('file', file)
 
-  const response = await fetch('/api/resumes/extract-text', {
+  const response = await protectedFetch('/api/resumes/extract-text', {
     method: 'POST',
     body: formData,
   })
-  if (!response.ok) {
-    throw new Error(await readErrorMessage(response))
-  }
   return response.json()
 }
 
 export async function submitMatch({ resumeText, jdText, requiredSkills }) {
-  const response = await fetch('/api/match', {
+  const response = await protectedFetch('/api/match', {
     method: 'POST',
     headers: JSON_HEADERS,
     body: JSON.stringify({ resumeText, jdText, requiredSkills }),
   })
-  if (!response.ok) {
-    throw new Error(await readErrorMessage(response))
-  }
   return response.json()
 }
 
 export async function fetchReportHistory() {
-  const response = await fetch('/api/reports')
-  if (!response.ok) {
-    throw new Error(await readErrorMessage(response))
-  }
+  const response = await protectedFetch('/api/reports')
   return response.json()
 }
 
 export async function fetchReportById(id) {
-  const response = await fetch(`/api/reports/${id}`)
-  if (!response.ok) {
-    throw new Error(await readErrorMessage(response))
-  }
+  const response = await protectedFetch(`/api/reports/${id}`)
   return response.json()
 }
