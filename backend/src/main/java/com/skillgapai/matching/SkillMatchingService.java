@@ -7,6 +7,7 @@ import com.skillgapai.model.MatchType;
 import com.skillgapai.model.RequiredSkill;
 import com.skillgapai.model.Skill;
 import com.skillgapai.taxonomy.SkillsTaxonomy;
+import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -20,11 +21,11 @@ import java.util.regex.Pattern;
  * skills a job description requires, and explain WHY each one is
  * matched, missing, or underemphasized.
  *
- * This class deliberately has NO Spring, NO database, and NO PDF parsing.
- * Those get layered on top of this class in later phases — this class is
- * the one piece of logic everything else depends on, so it has to be
- * correct and easy to reason about on its own first.
+ * The matching algorithm itself still has NO Spring dependency beyond
+ * this @Service annotation, which just lets Phase 3's MatchController
+ * get an instance via constructor injection instead of calling `new`.
  */
+@Service
 public class SkillMatchingService {
 
     /**
