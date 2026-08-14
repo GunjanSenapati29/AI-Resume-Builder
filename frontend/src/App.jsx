@@ -5,6 +5,7 @@ import GapReportScreen from './components/GapReportScreen'
 import ProcessingScreen from './components/ProcessingScreen'
 import HistoryScreen from './components/HistoryScreen'
 import AuthScreen from './components/AuthScreen'
+import LandingScreen from './components/LandingScreen'
 import { submitMatch, getToken, setToken, clearToken, onUnauthorized } from './api'
 
 // A local POST /api/match usually finishes in well under this time.
@@ -29,6 +30,7 @@ export default function App() {
   // whichever the token turns out to be, the first protected request
   // will 401 and onUnauthorized clears the rest.
   const [user, setUser] = useState(() => (getToken() ? loadStoredUser() : null))
+  const [preAuthScreen, setPreAuthScreen] = useState('landing') // 'landing' | 'auth'
   const [view, setView] = useState('compare') // 'compare' | 'history'
   const [resumeText, setResumeText] = useState('')
   const [jdText, setJdText] = useState('')
@@ -54,6 +56,7 @@ export default function App() {
     clearToken()
     localStorage.removeItem(USER_KEY)
     setUser(null)
+    setPreAuthScreen('landing')
     setView('compare')
     setStage('form')
     setReport(null)
@@ -101,121 +104,151 @@ export default function App() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-slate-50 px-4">
-        <AuthScreen onAuthSuccess={handleAuthSuccess} />
+      <div className="min-h-screen">
+        {preAuthScreen === 'landing' ? (
+          <LandingScreen onStart={() => setPreAuthScreen('auth')} />
+        ) : (
+          <AuthScreen onAuthSuccess={handleAuthSuccess} />
+        )}
       </div>
     )
   }
 
+  const navPillActive = 'bg-surface-1 text-accent-dark shadow-sm'
+  const navPillInactive = 'text-text-secondary hover:text-accent-dark'
+  const navPillBase =
+    'rounded-full px-4 py-1.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent'
+
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto max-w-3xl px-4 py-4">
-          <div className="flex items-start justify-between gap-4">
-            <h1 className="text-xl font-semibold text-slate-900">SkillGap AI</h1>
-            <div className="flex items-center gap-3 text-sm text-slate-500">
-              <span>{user.name}</span>
+    <div className="min-h-screen">
+      <header className="border-b border-border bg-surface-1">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-br from-accent to-violet text-sm font-extrabold text-white shadow-[0_4px_10px_rgba(42,110,224,0.35)]">
+              SG
+            </span>
+            <span className="font-display text-lg font-extrabold text-text-primary">SkillGap AI</span>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <nav
+              className="flex gap-1 rounded-full border border-border bg-surface-2 p-1 text-sm"
+              aria-label="Screens"
+            >
+              <button
+                type="button"
+                onClick={() => setView('compare')}
+                aria-current={view === 'compare' ? 'page' : undefined}
+                className={`${navPillBase} ${view === 'compare' ? navPillActive : navPillInactive}`}
+              >
+                Upload &amp; Compare
+              </button>
+              <button
+                type="button"
+                onClick={() => setView('history')}
+                aria-current={view === 'history' ? 'page' : undefined}
+                className={`${navPillBase} ${view === 'history' ? navPillActive : navPillInactive}`}
+              >
+                History
+              </button>
+            </nav>
+
+            <div className="flex items-center gap-3 text-sm">
+              <span className="hidden text-text-muted sm:inline">{user.name}</span>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="rounded-md border border-slate-300 px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+                className="rounded-md border border-border px-3.5 py-1.5 font-bold text-text-primary transition-colors hover:border-accent hover:text-accent-dark focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent"
               >
                 Log out
               </button>
             </div>
           </div>
-          <p className="text-sm text-slate-500">
-            {view === 'history'
-              ? 'History'
-              : stage === 'processing'
-                ? 'Processing'
-                : stage === 'result'
-                  ? 'Gap Report'
-                  : 'Upload & Compare'}
-          </p>
-          <nav className="mt-3 flex gap-2 text-sm" aria-label="Screens">
-            <button
-              type="button"
-              onClick={() => setView('compare')}
-              aria-current={view === 'compare' ? 'page' : undefined}
-              className={`rounded-md px-3 py-1.5 font-medium focus:outline-none focus:ring-2 focus:ring-inset ${
-                view === 'compare'
-                  ? 'bg-blue-600 text-white focus:ring-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 focus:ring-blue-500'
-              }`}
-            >
-              Upload &amp; Compare
-            </button>
-            <button
-              type="button"
-              onClick={() => setView('history')}
-              aria-current={view === 'history' ? 'page' : undefined}
-              className={`rounded-md px-3 py-1.5 font-medium focus:outline-none focus:ring-2 focus:ring-inset ${
-                view === 'history'
-                  ? 'bg-blue-600 text-white focus:ring-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 focus:ring-blue-500'
-              }`}
-            >
-              History
-            </button>
-          </nav>
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl space-y-6 px-4 py-6">
+      <main className="mx-auto max-w-5xl space-y-6 px-4 py-10 sm:px-6">
         {view === 'history' && <HistoryScreen />}
 
         {view === 'compare' && stage === 'form' && (
-          <form
-            onSubmit={handleSubmit}
-            className="space-y-6 rounded-lg border border-slate-200 bg-white p-5"
-          >
-            <ResumeInput resumeText={resumeText} onResumeTextChange={setResumeText} />
-
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="jd-text" className="mb-1 block text-sm font-semibold text-slate-700">
-                Job description
-              </label>
-              <textarea
-                id="jd-text"
-                rows={6}
-                value={jdText}
-                onChange={(event) => setJdText(event.target.value)}
-                placeholder="Paste the job description here..."
-                className="w-full rounded-md border border-slate-300 p-3 text-sm text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-              />
+              <h2 className="text-xl font-bold text-text-primary">Upload &amp; Compare</h2>
+              <p className="mt-0.5 text-sm text-text-muted">Both sides are needed to run an analysis</p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+              <ResumeInput resumeText={resumeText} onResumeTextChange={setResumeText} />
+
+              <div className="rounded-lg border border-border bg-surface-1 p-6 shadow-sm">
+                <div className="mb-4 flex items-center gap-3">
+                  <span className="flex h-9 w-9 flex-none items-center justify-center rounded-md bg-accent-tint text-accent-dark">
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M9 12h6m-6 4h6M9 8h1M5 21h14a2 2 0 002-2V7l-5-5H5a2 2 0 00-2 2v15a2 2 0 002 2z" />
+                    </svg>
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-bold text-text-primary">Job Description</h3>
+                    <p className="text-xs text-text-muted">Paste the full job posting text</p>
+                  </div>
+                </div>
+                <label htmlFor="jd-text" className="sr-only">
+                  Job description
+                </label>
+                <textarea
+                  id="jd-text"
+                  rows={12}
+                  value={jdText}
+                  onChange={(event) => setJdText(event.target.value)}
+                  placeholder="Paste the job description here..."
+                  className="w-full rounded-md border border-border p-3.5 text-sm text-text-primary transition-[border-color,box-shadow] focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-tint"
+                />
+              </div>
             </div>
 
             <SkillsChecklist selectedSkills={selectedSkills} onChange={setSelectedSkills} />
 
-            {submitError && (
-              <p className="text-sm text-red-600" role="alert">
-                {submitError}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              className="w-full rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
-            >
-              Compare
-            </button>
+            <div className="flex flex-wrap items-center gap-4">
+              <button
+                type="submit"
+                className="inline-flex items-center gap-2 rounded-md bg-gradient-to-br from-accent to-violet px-6 py-3 text-sm font-bold text-white shadow-[0_8px_18px_rgba(42,110,224,0.28)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(42,110,224,0.36)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white active:scale-[0.97]"
+              >
+                <svg
+                  className="h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  aria-hidden="true"
+                >
+                  <path d="M13 5l7 7-7 7M5 12h15" />
+                </svg>
+                Analyze
+              </button>
+              {submitError && (
+                <p className="text-sm font-medium text-critical" role="alert">
+                  {submitError}
+                </p>
+              )}
+            </div>
           </form>
         )}
 
         {view === 'compare' && stage === 'processing' && <ProcessingScreen />}
 
         {view === 'compare' && stage === 'result' && report && (
-          <>
-            <GapReportScreen report={report} />
-            <button
-              type="button"
-              onClick={handleStartOver}
-              className="w-full rounded-md border border-slate-300 bg-white px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
-            >
-              Start a new comparison
-            </button>
-          </>
+          <GapReportScreen report={report} onStartOver={handleStartOver} />
         )}
       </main>
     </div>

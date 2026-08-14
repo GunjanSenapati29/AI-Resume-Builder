@@ -6,6 +6,12 @@ import { login, signup } from '../api'
  * login and signup share the same email/password fields, signup adds a
  * name field. On success, hands the {token, name, email} back up to App
  * via onAuthSuccess, which is what actually unlocks the rest of the app.
+ *
+ * Phase 11: restyled to match design-reference.html's Auth card (avatar
+ * mark, gradient primary button, warm-neutral surfaces). The reference
+ * itself only mocks a single login card with no visible mode switch -
+ * kept our existing Log in/Sign up toggle rather than adopting that,
+ * since removing it would be a functional change, not a visual one.
  */
 export default function AuthScreen({ onAuthSuccess }) {
   const [mode, setMode] = useState('login') // 'login' | 'signup'
@@ -50,28 +56,50 @@ export default function AuthScreen({ onAuthSuccess }) {
     }
   }
 
-  return (
-    <div className="mx-auto mt-12 max-w-sm">
-      <div className="mb-6 text-center">
-        <h1 className="text-xl font-semibold text-slate-900">SkillGap AI</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          {mode === 'login' ? 'Log in to see your reports' : 'Create an account to get started'}
-        </p>
-      </div>
+  const fieldClasses =
+    'w-full rounded-md border border-border bg-surface-1 p-3 text-sm text-text-primary transition-[border-color,box-shadow] focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-tint'
+  const labelClasses = 'mb-1.5 block text-xs font-bold text-text-secondary'
 
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-4 rounded-lg border border-slate-200 bg-white p-5"
-      >
-        <div className="flex gap-2 text-sm" role="group" aria-label="Auth mode">
+  return (
+    <div className="animate-pop-in mx-auto mt-16 w-full max-w-sm px-4 opacity-0">
+      <div className="rounded-lg border border-border bg-surface-1 p-10 shadow-sm">
+        <div className="mx-auto mb-4 flex h-[52px] w-[52px] items-center justify-center rounded-md bg-gradient-to-br from-accent to-violet shadow-[0_8px_18px_rgba(42,110,224,0.3)]">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#fff"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+        </div>
+
+        <h1 className="mb-1 text-center text-xl font-bold text-text-primary">
+          {mode === 'login' ? 'Welcome back' : 'Create your account'}
+        </h1>
+        <p className="mb-6 text-center text-sm text-text-muted">
+          {mode === 'login' ? 'Log in to see your saved reports' : 'Start comparing resumes to job descriptions'}
+        </p>
+
+        <div
+          className="mb-5 flex gap-1 rounded-full border border-border bg-surface-2 p-1 text-sm"
+          role="group"
+          aria-label="Auth mode"
+        >
           <button
             type="button"
             aria-pressed={mode === 'login'}
             onClick={() => switchMode('login')}
-            className={`flex-1 rounded-md px-3 py-1.5 font-medium focus:outline-none focus:ring-2 focus:ring-inset ${
+            className={`flex-1 rounded-full px-3 py-1.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-inset ${
               mode === 'login'
-                ? 'bg-blue-600 text-white focus:ring-white'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 focus:ring-blue-500'
+                ? 'bg-surface-1 text-accent-dark shadow-sm focus:ring-accent'
+                : 'text-text-secondary hover:text-accent-dark focus:ring-accent'
             }`}
           >
             Log in
@@ -80,79 +108,81 @@ export default function AuthScreen({ onAuthSuccess }) {
             type="button"
             aria-pressed={mode === 'signup'}
             onClick={() => switchMode('signup')}
-            className={`flex-1 rounded-md px-3 py-1.5 font-medium focus:outline-none focus:ring-2 focus:ring-inset ${
+            className={`flex-1 rounded-full px-3 py-1.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-inset ${
               mode === 'signup'
-                ? 'bg-blue-600 text-white focus:ring-white'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 focus:ring-blue-500'
+                ? 'bg-surface-1 text-accent-dark shadow-sm focus:ring-accent'
+                : 'text-text-secondary hover:text-accent-dark focus:ring-accent'
             }`}
           >
             Sign up
           </button>
         </div>
 
-        {mode === 'signup' && (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {mode === 'signup' && (
+            <div>
+              <label htmlFor="auth-name" className={labelClasses}>
+                Name
+              </label>
+              <input
+                id="auth-name"
+                type="text"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                autoComplete="name"
+                className={fieldClasses}
+              />
+            </div>
+          )}
+
           <div>
-            <label htmlFor="auth-name" className="mb-1 block text-sm font-semibold text-slate-700">
-              Name
+            <label htmlFor="auth-email" className={labelClasses}>
+              Email
             </label>
             <input
-              id="auth-name"
-              type="text"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              autoComplete="name"
-              className="w-full rounded-md border border-slate-300 p-2.5 text-sm text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              id="auth-email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              autoComplete="email"
+              className={fieldClasses}
             />
           </div>
-        )}
 
-        <div>
-          <label htmlFor="auth-email" className="mb-1 block text-sm font-semibold text-slate-700">
-            Email
-          </label>
-          <input
-            id="auth-email"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            autoComplete="email"
-            className="w-full rounded-md border border-slate-300 p-2.5 text-sm text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-          />
-        </div>
+          <div>
+            <label htmlFor="auth-password" className={labelClasses}>
+              Password
+            </label>
+            <input
+              id="auth-password"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+              className={fieldClasses}
+            />
+            {mode === 'signup' && (
+              <p className="mt-1.5 text-xs text-text-muted">At least 8 characters.</p>
+            )}
+          </div>
 
-        <div>
-          <label htmlFor="auth-password" className="mb-1 block text-sm font-semibold text-slate-700">
-            Password
-          </label>
-          <input
-            id="auth-password"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-            className="w-full rounded-md border border-slate-300 p-2.5 text-sm text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-          />
-          {mode === 'signup' && (
-            <p className="mt-1 text-xs text-slate-500">At least 8 characters.</p>
+          {error && (
+            <p className="text-sm font-medium text-critical" role="alert">
+              {error}
+            </p>
           )}
-        </div>
 
-        {error && (
-          <p className="text-sm text-red-600" role="alert">
-            {error}
-          </p>
-        )}
-
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded-md bg-blue-600 px-4 py-2.5 font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white disabled:cursor-not-allowed disabled:bg-blue-300"
-        >
-          {submitting
-            ? mode === 'login' ? 'Logging in...' : 'Creating account...'
-            : mode === 'login' ? 'Log in' : 'Create account'}
-        </button>
-      </form>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-gradient-to-br from-accent to-violet px-4 py-3 text-sm font-bold text-white shadow-[0_8px_18px_rgba(42,110,224,0.28)] transition-[transform,box-shadow,opacity] hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(42,110,224,0.36)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white active:scale-[0.97] disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-50 disabled:shadow-none"
+          >
+            {submitting
+              ? mode === 'login' ? 'Logging in...' : 'Creating account...'
+              : mode === 'login' ? 'Log in' : 'Create account'}
+          </button>
+        </form>
+      </div>
     </div>
   )
 }

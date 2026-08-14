@@ -1,9 +1,143 @@
 @import "tailwindcss";
 
+/*
+ * Phase 11: design tokens ported from design-reference.html at the repo
+ * root. Tailwind v4 is CSS-first (no tailwind.config.js) - anything
+ * declared here under @theme becomes a real utility class, so
+ * --color-accent below is what makes `bg-accent` / `text-accent` / etc.
+ * work everywhere, the same way Tailwind's own built-in colors do.
+ *
+ * One deliberate deviation from the reference: --color-text-muted is
+ * darkened from the reference's #8b897f (2.6:1 contrast on white - the
+ * same AA failure Phase 8 fixed for text-slate-400) to #6b6a61 (5.4:1).
+ * Everything else matches the reference exactly.
+ */
+@theme {
+  --color-page-plane: #f3f2ee;
+  --color-surface-1: #ffffff;
+  --color-surface-2: #fbfaf7;
+  --color-text-primary: #12120f;
+  --color-text-secondary: #54534b;
+  --color-text-muted: #6b6a61;
+  --color-gridline: #e6e4dc;
+  --color-border: rgba(11, 11, 11, 0.09);
+  --color-accent: #2a6ee0;
+  --color-accent-dark: #184f95;
+  --color-accent-tint: #eaf1fd;
+  --color-violet: #5b46d9;
+  --color-good: #0ca30c;
+  --color-good-tint: #e6f7e8;
+  --color-warning: #c98500;
+  --color-warning-tint: #fdf1dc;
+  --color-critical: #d03b3b;
+  --color-critical-tint: #fbe9e8;
+
+  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, sans-serif;
+
+  /* Overrides Tailwind's default rounded-sm/md/lg scale app-wide - the
+     existing screens already use exactly these three radius classes
+     (sm for chips, md for buttons/inputs, lg for cards), so this alone
+     re-scales everything to the reference without touching every
+     className. */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+
+  --shadow-sm: 0 1px 3px rgba(18, 18, 15, 0.06), 0 1px 2px rgba(18, 18, 15, 0.04);
+  --shadow-md: 0 8px 24px rgba(18, 18, 15, 0.08), 0 2px 6px rgba(18, 18, 15, 0.04);
+  --shadow-lg: 0 20px 50px rgba(18, 18, 15, 0.14), 0 6px 16px rgba(18, 18, 15, 0.06);
+
+  --animate-fade-up: fade-up 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-pop-in: pop-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-slide-in-left: slide-in-left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-float-y: float-y 4s ease-in-out infinite;
+  --animate-pulse-soft: pulse-soft 1.6s ease-in-out infinite;
+}
+
 :root {
   color-scheme: light;
 }
 
 body {
-  @apply bg-slate-50 text-slate-800 antialiased;
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--color-text-primary);
+  background:
+    radial-gradient(900px 500px at 15% -10%, rgba(42, 110, 224, 0.1), transparent 60%),
+    radial-gradient(700px 500px at 100% 0%, rgba(91, 70, 217, 0.08), transparent 55%),
+    var(--color-page-plane);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* Matches design-reference.html's approach: a blanket kill-switch
+   rather than remembering motion-reduce: on every animated element. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.001ms !important;
+  }
 }

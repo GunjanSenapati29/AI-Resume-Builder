@@ -7,6 +7,12 @@ import { extractResumeText } from '../api'
  * successful PDF extraction the text still lands in the same editable
  * textarea, so a bad extraction can always be fixed by hand instead of
  * blocking the user - that's the "manual-paste fallback" from the roadmap.
+ *
+ * Phase 11: the upload mode is now styled as design-reference.html's
+ * dropzone, but stays click-to-browse only - the reference's copy says
+ * "drag & drop", but wiring up real drag-and-drop would be a new
+ * interaction, not a visual change, so the copy here says "click"
+ * instead of promising something that doesn't work.
  */
 export default function ResumeInput({ resumeText, onResumeTextChange }) {
   const [mode, setMode] = useState('paste')
@@ -48,18 +54,39 @@ export default function ResumeInput({ resumeText, onResumeTextChange }) {
   }
 
   return (
-    <fieldset className="space-y-3">
-      <legend className="text-sm font-semibold text-slate-700">Resume</legend>
+    <fieldset className="rounded-lg border border-border bg-surface-1 p-6 shadow-sm">
+      <div className="mb-4 flex items-center gap-3">
+        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-md bg-accent-tint text-accent-dark">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+            <path d="M14 2v6h6" />
+          </svg>
+        </span>
+        <div>
+          <legend className="text-sm font-bold text-text-primary">Your Resume</legend>
+          <p className="text-xs text-text-muted">Upload a PDF, or paste text instead</p>
+        </div>
+      </div>
 
-      <div className="flex gap-2 text-sm" role="group" aria-label="Resume input method">
+      <div className="mb-4 flex gap-1 rounded-full border border-border bg-surface-2 p-1 text-sm" role="group" aria-label="Resume input method">
         <button
           type="button"
           aria-pressed={mode === 'upload'}
           onClick={() => setMode('upload')}
-          className={`rounded-md px-3 py-1.5 font-medium focus:outline-none focus:ring-2 focus:ring-inset ${
+          className={`flex-1 rounded-full px-3 py-1.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent ${
             mode === 'upload'
-              ? 'bg-blue-600 text-white focus:ring-white'
-              : 'bg-slate-100 text-slate-700 hover:bg-slate-200 focus:ring-blue-500'
+              ? 'bg-surface-1 text-accent-dark shadow-sm'
+              : 'text-text-secondary hover:text-accent-dark'
           }`}
         >
           Upload PDF
@@ -68,10 +95,10 @@ export default function ResumeInput({ resumeText, onResumeTextChange }) {
           type="button"
           aria-pressed={mode === 'paste'}
           onClick={() => setMode('paste')}
-          className={`rounded-md px-3 py-1.5 font-medium focus:outline-none focus:ring-2 focus:ring-inset ${
+          className={`flex-1 rounded-full px-3 py-1.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent ${
             mode === 'paste'
-              ? 'bg-blue-600 text-white focus:ring-white'
-              : 'bg-slate-100 text-slate-700 hover:bg-slate-200 focus:ring-blue-500'
+              ? 'bg-surface-1 text-accent-dark shadow-sm'
+              : 'text-text-secondary hover:text-accent-dark'
           }`}
         >
           Paste text
@@ -79,30 +106,52 @@ export default function ResumeInput({ resumeText, onResumeTextChange }) {
       </div>
 
       {mode === 'upload' && (
-        <div>
-          <label htmlFor="resume-file" className="sr-only">
-            Resume PDF file
-          </label>
+        <div className="mb-4">
           <input
             id="resume-file"
             type="file"
             accept="application/pdf"
             onChange={handleFileChange}
             disabled={extracting}
-            className="block w-full text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-blue-600 file:px-3 file:py-1.5 file:font-medium file:text-white hover:file:bg-blue-700"
+            className="peer sr-only"
           />
+          <label
+            htmlFor="resume-file"
+            className="block cursor-pointer rounded-md border-2 border-dashed border-gridline p-8 text-center text-sm text-text-muted transition-colors hover:border-accent hover:bg-accent-tint peer-focus-visible:border-accent peer-focus-visible:bg-accent-tint peer-focus-visible:ring-2 peer-focus-visible:ring-accent-tint peer-disabled:cursor-not-allowed peer-disabled:opacity-60"
+          >
+            <svg
+              className="mx-auto mb-2.5"
+              width="26"
+              height="26"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#8b897f"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M12 16V4m0 0l-4 4m4-4l4 4" />
+              <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
+            </svg>
+            <div>
+              Click to choose your resume PDF
+              <br />
+              <span className="text-xs">up to 5MB</span>
+            </div>
+          </label>
           {extracting && (
-            <p className="mt-2 text-sm text-slate-500" role="status">
+            <p className="mt-2 text-sm text-text-muted" role="status">
               Extracting text from your PDF...
             </p>
           )}
           {extractError && (
-            <p className="mt-2 text-sm text-red-600" role="alert">
+            <p className="mt-2 text-sm font-medium text-critical" role="alert">
               {extractError}
             </p>
           )}
           {extractedInfo && !extractError && (
-            <p className="mt-2 text-sm text-green-700" role="status">
+            <p className="mt-2 text-sm font-medium text-good" role="status">
               {extractedInfo}
             </p>
           )}
@@ -110,7 +159,7 @@ export default function ResumeInput({ resumeText, onResumeTextChange }) {
       )}
 
       <div>
-        <label htmlFor="resume-text" className="mb-1 block text-sm text-slate-600">
+        <label htmlFor="resume-text" className="mb-1.5 block text-xs font-bold text-text-secondary">
           {mode === 'upload' ? 'Extracted text (edit if needed)' : 'Paste your resume text'}
         </label>
         <textarea
@@ -119,7 +168,7 @@ export default function ResumeInput({ resumeText, onResumeTextChange }) {
           value={resumeText}
           onChange={(event) => onResumeTextChange(event.target.value)}
           placeholder="Paste your resume text here..."
-          className="w-full rounded-md border border-slate-300 p-3 text-sm text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+          className="w-full rounded-md border border-border p-3.5 text-sm text-text-primary transition-[border-color,box-shadow] focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-tint"
         />
       </div>
     </fieldset>
