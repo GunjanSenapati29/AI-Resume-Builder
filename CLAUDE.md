@@ -263,8 +263,9 @@ rejection, and duplicate-email rejection all confirmed working.
   quoted numbers (56% match, 5 matched, 4 missing ranked easiest-first,
   4 underemphasized) are real, not estimated.
 
-**Phase 12 (App Shell Migration) complete, committed as d08476a.**
-Phase 13 next = ATS Compatibility Analyzer.
+**Phase 13 (ATS Compatibility Analyzer) complete, committed as
+43561a2, manually verified including regression check on pre-existing
+History reports.** Phase 14 next = Skill Evidence Analyzer.
 
 ## Feature Roadmap (Phase 13-27)
 
