@@ -8,11 +8,12 @@ import { extractResumeText } from '../api'
  * textarea, so a bad extraction can always be fixed by hand instead of
  * blocking the user - that's the "manual-paste fallback" from the roadmap.
  *
- * Phase 11: the upload mode is now styled as design-reference.html's
- * dropzone, but stays click-to-browse only - the reference's copy says
- * "drag & drop", but wiring up real drag-and-drop would be a new
- * interaction, not a visual change, so the copy here says "click"
- * instead of promising something that doesn't work.
+ * Phase 11: the upload mode is styled as a dropzone, but stays
+ * click-to-browse only - real drag-and-drop would be a new interaction,
+ * not a visual change, so the copy says "click" instead of promising
+ * something that doesn't work.
+ *
+ * Phase 12: restyled to Design System v2 tokens.
  */
 export default function ResumeInput({ resumeText, onResumeTextChange }) {
   const [mode, setMode] = useState('paste')
@@ -54,9 +55,9 @@ export default function ResumeInput({ resumeText, onResumeTextChange }) {
   }
 
   return (
-    <fieldset className="rounded-lg border border-border bg-surface-1 p-6 shadow-sm">
+    <fieldset className="rounded-lg border border-border bg-surface p-6">
       <div className="mb-4 flex items-center gap-3">
-        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-md bg-accent-tint text-accent-dark">
+        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-md border border-border text-text-secondary">
           <svg
             width="18"
             height="18"
@@ -78,15 +79,15 @@ export default function ResumeInput({ resumeText, onResumeTextChange }) {
         </div>
       </div>
 
-      <div className="mb-4 flex gap-1 rounded-full border border-border bg-surface-2 p-1 text-sm" role="group" aria-label="Resume input method">
+      <div className="mb-4 flex gap-1 rounded-md border border-border bg-surface-raised p-1 text-sm" role="group" aria-label="Resume input method">
         <button
           type="button"
           aria-pressed={mode === 'upload'}
           onClick={() => setMode('upload')}
-          className={`flex-1 rounded-full px-3 py-1.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent ${
+          className={`flex-1 rounded-md px-3 py-1.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent ${
             mode === 'upload'
-              ? 'bg-surface-1 text-accent-dark shadow-sm'
-              : 'text-text-secondary hover:text-accent-dark'
+              ? 'bg-surface text-accent shadow-sm'
+              : 'text-text-secondary hover:text-text-primary'
           }`}
         >
           Upload PDF
@@ -95,10 +96,10 @@ export default function ResumeInput({ resumeText, onResumeTextChange }) {
           type="button"
           aria-pressed={mode === 'paste'}
           onClick={() => setMode('paste')}
-          className={`flex-1 rounded-full px-3 py-1.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent ${
+          className={`flex-1 rounded-md px-3 py-1.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent ${
             mode === 'paste'
-              ? 'bg-surface-1 text-accent-dark shadow-sm'
-              : 'text-text-secondary hover:text-accent-dark'
+              ? 'bg-surface text-accent shadow-sm'
+              : 'text-text-secondary hover:text-text-primary'
           }`}
         >
           Paste text
@@ -117,7 +118,7 @@ export default function ResumeInput({ resumeText, onResumeTextChange }) {
           />
           <label
             htmlFor="resume-file"
-            className="block cursor-pointer rounded-md border-2 border-dashed border-gridline p-8 text-center text-sm text-text-muted transition-colors hover:border-accent hover:bg-accent-tint peer-focus-visible:border-accent peer-focus-visible:bg-accent-tint peer-focus-visible:ring-2 peer-focus-visible:ring-accent-tint peer-disabled:cursor-not-allowed peer-disabled:opacity-60"
+            className="block cursor-pointer rounded-md border-2 border-dashed border-border p-8 text-center text-sm text-text-muted transition-colors hover:border-accent hover:bg-surface-hover peer-focus-visible:border-accent peer-focus-visible:bg-surface-hover peer-focus-visible:ring-2 peer-focus-visible:ring-accent peer-disabled:cursor-not-allowed peer-disabled:opacity-60"
           >
             <svg
               className="mx-auto mb-2.5"
@@ -125,7 +126,7 @@ export default function ResumeInput({ resumeText, onResumeTextChange }) {
               height="26"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#8b897f"
+              stroke="currentColor"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -168,7 +169,7 @@ export default function ResumeInput({ resumeText, onResumeTextChange }) {
           value={resumeText}
           onChange={(event) => onResumeTextChange(event.target.value)}
           placeholder="Paste your resume text here..."
-          className="w-full rounded-md border border-border p-3.5 text-sm text-text-primary transition-[border-color,box-shadow] focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-tint"
+          className="w-full rounded-md border border-border bg-surface p-3.5 text-sm text-text-primary transition-[border-color,box-shadow] focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent"
         />
       </div>
     </fieldset>

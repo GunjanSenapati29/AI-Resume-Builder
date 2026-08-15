@@ -28,7 +28,7 @@ export default function MatchMeter({ percentage, matchedCount, missingCount, und
   const dashLength = (animatedPct / 100) * CIRCUMFERENCE
 
   return (
-    <section className="flex flex-wrap items-center gap-10 rounded-lg border border-border bg-gradient-to-br from-surface-1 to-[#f8fbff] p-7 shadow-sm">
+    <section className="flex flex-wrap items-center gap-10 rounded-lg border border-border bg-surface p-7">
       <div className="flex items-center gap-4">
         <svg
           width="104"
@@ -37,7 +37,7 @@ export default function MatchMeter({ percentage, matchedCount, missingCount, und
           role="img"
           aria-label={`${rounded} percent match: ${matchedCount} of ${matchedCount + missingCount} required skills found`}
         >
-          <circle cx="60" cy="60" r={RADIUS} fill="none" stroke="#e6e4dc" strokeWidth="12" />
+          <circle cx="60" cy="60" r={RADIUS} fill="none" stroke="var(--color-border-strong)" strokeWidth="12" />
           <circle
             cx="60"
             cy="60"
@@ -53,10 +53,10 @@ export default function MatchMeter({ percentage, matchedCount, missingCount, und
             x="60"
             y="68"
             textAnchor="middle"
-            className="font-display"
+            className="font-mono"
             fontSize="24"
-            fontWeight="800"
-            fill="#12120f"
+            fontWeight="700"
+            fill="var(--color-text-primary)"
           >
             {animatedPct}%
           </text>
@@ -84,7 +84,7 @@ function CountItem({ hex, value, label }) {
   return (
     <div className="flex items-center gap-2.5 text-sm text-text-secondary">
       <span className="h-2.5 w-2.5 flex-none rounded-full" style={{ backgroundColor: hex }} aria-hidden="true" />
-      <span className="font-display text-lg font-extrabold text-text-primary">{value}</span>
+      <span className="font-mono text-lg font-bold text-text-primary">{value}</span>
       {label}
     </div>
   )

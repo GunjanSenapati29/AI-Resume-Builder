@@ -7,8 +7,8 @@ const STEP_LABELS = ['Reading resume', 'Comparing against job description', 'Ran
  * the form while POST /api/match is in flight, so submitting always gets
  * a visible state change instead of the form just sitting there.
  *
- * Phase 11: restyled with design-reference.html's two-tone ring and a
- * 3-step narration list. The steps are illustrative, not driven by real
+ * Phase 11: restyled with a spinning ring and a 3-step narration list.
+ * The steps are illustrative, not driven by real
  * backend progress events - the actual call is one atomic request, so
  * "done"/"now"/"pending" here just narrates roughly what a match
  * involves, timed independently of when the real response arrives.
@@ -27,11 +27,11 @@ export default function ProcessingScreen() {
     <section
       role="status"
       aria-live="polite"
-      className="mx-auto max-w-md rounded-lg border border-border bg-surface-1 p-12 text-center shadow-sm"
+      className="mx-auto max-w-md rounded-lg border border-border bg-surface p-12 text-center"
     >
       <span
         aria-hidden="true"
-        className="mx-auto mb-6 block h-[76px] w-[76px] animate-spin rounded-full border-[5px] border-gridline border-t-accent border-r-violet"
+        className="mx-auto mb-6 block h-[76px] w-[76px] animate-spin rounded-full border-[5px] border-border-strong border-t-accent"
       />
       <h3 className="text-base font-bold text-text-primary">Analyzing your match…</h3>
       <p className="mt-1 text-sm text-text-muted">This usually takes a few seconds</p>
@@ -89,10 +89,10 @@ function StepRow({ state, label }) {
   return (
     <li className="flex items-center gap-2.5 py-2 text-text-secondary">
       <svg
-        className="h-4 w-4 flex-none"
+        className="h-4 w-4 flex-none text-border-strong"
         viewBox="0 0 24 24"
         fill="none"
-        stroke="#c7c5bb"
+        stroke="currentColor"
         strokeWidth="2"
         aria-hidden="true"
       >

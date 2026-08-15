@@ -1,13 +1,15 @@
 import { GoodIcon, WarningIcon, CriticalIcon } from './StatusIcons'
 import { STATUS_COLORS } from '../statusColors'
 
-// Used only for the icon swatch/chip tint, never as text color
-// (warning/critical are sub-3:1 on a light surface by design; the icon +
-// adjacent text label is the accessibility mitigation).
+// Status color is carried by the icon and a colored left border only,
+// never as the chip's text color - text stays theme-aware
+// (text-primary/text-muted) so it stays legible in both dark and light,
+// unlike a fixed hex tuned for one background. The icon + adjacent text
+// label is what actually conveys the status; the color reinforces it.
 const VARIANTS = {
-  good: { Icon: GoodIcon, hex: STATUS_COLORS.good, chipBg: 'bg-good-tint', chipText: 'text-[#0b3d0b]' },
-  warning: { Icon: WarningIcon, hex: STATUS_COLORS.warning, chipBg: 'bg-warning-tint', chipText: 'text-[#5c3d00]' },
-  critical: { Icon: CriticalIcon, hex: STATUS_COLORS.critical, chipBg: 'bg-critical-tint', chipText: 'text-[#5c1613]' },
+  good: { Icon: GoodIcon, hex: STATUS_COLORS.good },
+  warning: { Icon: WarningIcon, hex: STATUS_COLORS.warning },
+  critical: { Icon: CriticalIcon, hex: STATUS_COLORS.critical },
 }
 
 const MATCH_TYPE_LABEL = {
@@ -29,13 +31,14 @@ function tagsFor(item) {
 }
 
 function Chip({ variant, item, index, ordered }) {
-  const { Icon, hex, chipBg, chipText } = VARIANTS[variant]
+  const { Icon, hex } = VARIANTS[variant]
   const tags = tagsFor(item)
   const isTopPriority = ordered && index === 0
 
   return (
     <li
-      className={`flex items-start gap-2.5 rounded-sm px-3.5 py-2.5 text-sm font-semibold transition-transform hover:translate-x-0.5 ${chipBg} ${chipText}`}
+      style={{ borderLeftColor: hex }}
+      className="flex items-start gap-2.5 rounded-sm border border-border border-l-[3px] bg-surface px-3.5 py-2.5 text-sm font-semibold text-text-primary transition-transform hover:translate-x-0.5"
     >
       <Icon className="mt-0.5 h-[18px] w-[18px] flex-none" style={{ color: hex }} />
       <div className="min-w-0 flex-1">
@@ -70,7 +73,7 @@ export default function SkillSection({ variant, title, subtitle, items, emptyTex
   const { Icon, hex } = VARIANTS[variant]
 
   return (
-    <section className="rounded-lg border border-border bg-surface-1 p-5 shadow-sm">
+    <section className="rounded-lg border border-border bg-surface p-5">
       <div className="mb-4 flex items-start gap-2.5">
         <span
           className="flex h-7 w-7 flex-none items-center justify-center rounded-full"

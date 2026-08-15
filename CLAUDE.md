@@ -263,9 +263,81 @@ rejection, and duplicate-email rejection all confirmed working.
   quoted numbers (56% match, 5 matched, 4 missing ranked easiest-first,
   4 underemphasized) are real, not estimated.
 
-**v1.0 is the current state of the project.** All 10 build-order phases
-are done; there is no pending "next phase" - treat any further request
-as new scope, not a continuation of the original build order.
+**Phase 11 (visual redesign v1.1) complete.** Phase 12 next = App Shell
+Migration — rebuild the layout as sidebar+topbar with dark/light theme
+support, and move the existing Landing, Auth, Upload & Compare, and
+Processing screens into the new shell, reusing their existing logic. No
+new feature logic in Phase 12 — layout and theming only.
+
+## Design System v2 (Phase 12+)
+
+This section documents the target design system for the App Shell
+Migration and the phases after it. It is a spec to build toward, not
+something already implemented — Phase 12 is where this starts landing.
+
+**Application shell** — replace the current tab-bar layout with:
+- A collapsible sidebar for primary navigation.
+- A top bar containing search, notifications, and a theme toggle.
+- A main content area where each existing screen renders.
+
+**Theming** — dark is the default theme; light is available via the
+top-bar toggle. Both palettes are fixed token sets, not computed:
+
+*Dark tokens:*
+| Token | Hex |
+|---|---|
+| bg | #0a0a0c |
+| sidebar | #0c0c0f |
+| surface | #111114 |
+| surface-hover | #17171b |
+| surface-raised | #1a1a1f |
+| border (subtle) | #212127 |
+| border (strong) | #2c2c34 |
+| text primary | #f2f2f4 |
+| text secondary | #9a9aa4 |
+| text muted | #65656e |
+| accent | #3b82f6 |
+| accent hover | #2f6fe0 |
+
+*Light tokens:*
+| Token | Hex |
+|---|---|
+| bg / surface | #ffffff |
+| sidebar | #fafafb |
+| surface-hover | #f4f4f6 |
+| surface-raised | #f6f6f8 |
+| border (subtle) | #e5e5ea |
+| border (strong) | #d3d3da |
+| text primary | #17171a |
+| text secondary | #57575f |
+| text muted | #84848c |
+| accent | #2563eb |
+| accent hover | #1d4ed8 |
+
+*Status colors (same in both themes)* — reserved for meaning only,
+always paired with a label, never used decoratively:
+| Status | Hex |
+|---|---|
+| good | #0e9f6e |
+| warning | #c2850c |
+| critical | #dc2626 |
+
+**Accent discipline** — one accent color, used only for primary buttons,
+active nav state, links, and focus rings. Nowhere else.
+
+**Typography** — Inter as the only font family (drop Plus Jakarta Sans).
+JetBrains Mono used selectively, only for numeric stats/scores/dates.
+
+**Spacing & shape** — fixed spacing scale: 4/8/12/16/24/32/48px. Small
+border radius (6-10px). Subtle 1px borders. Minimal shadows. No
+gradients, glow, or glassmorphism.
+
+**Layout pattern** — prefer bordered panels and row-lists over stacking
+every item in its own floating card.
+
+**Badge vocabulary** — a consistent, fixed set of badge labels across the
+app: Strong Match, Good Match, Needs Improvement, Critical Gap,
+Completed, In Progress, Pending.
 
 ## Definition of "outstanding" — check every screen against this
 

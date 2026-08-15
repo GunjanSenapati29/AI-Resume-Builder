@@ -14,12 +14,13 @@ import { formatDate } from '../dateFormat'
  * a download; can't be a plain <a href> link since the route needs the
  * Authorization header like every other protected route.
  *
- * Phase 11 - restyled to design-reference.html's report-header + summary-
- * strip + report-columns layout. `onStartOver` is optional: App.jsx's
- * fresh-Compare flow passes it (renders "Compare Another JD" up top,
- * where the old "Start a new comparison" button used to sit below);
- * HistoryScreen doesn't, since its own "Back to history" link already
- * covers that.
+ * Phase 11 - restyled to a report-header + summary-strip + report-columns
+ * layout. `onStartOver` is optional: App.jsx's fresh-Compare flow passes
+ * it (renders "Compare Another JD" up top, where the old "Start a new
+ * comparison" button used to sit below); HistoryScreen doesn't, since
+ * its own "Back to history" link already covers that.
+ *
+ * Phase 12 - restyled to Design System v2 tokens.
  */
 export default function GapReportScreen({ report, onStartOver }) {
   const matchedCount = report.matched.length
@@ -60,7 +61,7 @@ export default function GapReportScreen({ report, onStartOver }) {
           <button
             type="button"
             onClick={onStartOver}
-            className="inline-flex items-center gap-2 rounded-md border border-border bg-surface-1 px-4 py-2.5 text-sm font-bold text-text-primary transition-colors hover:border-accent hover:text-accent-dark focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent"
+            className="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-4 py-2.5 text-sm font-bold text-text-primary transition-colors hover:border-accent hover:text-accent focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent"
           >
             <svg
               className="h-4 w-4"
@@ -118,7 +119,7 @@ export default function GapReportScreen({ report, onStartOver }) {
           type="button"
           onClick={handleDownload}
           disabled={downloading}
-          className="inline-flex items-center gap-2 rounded-md bg-gradient-to-br from-accent to-violet px-6 py-3 text-sm font-bold text-white shadow-[0_8px_18px_rgba(42,110,224,0.28)] transition-[transform,box-shadow,opacity] hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(42,110,224,0.36)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white active:scale-[0.97] disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-50 disabled:shadow-none"
+          className="inline-flex items-center gap-2 rounded-md bg-accent px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <svg
             className="h-4 w-4"

@@ -22,16 +22,19 @@ const STEPS = [
 
 /**
  * Phase 11: the marketing/entry screen shown to a logged-out visitor
- * before Auth - not part of the original build order (Phases 1-10
- * never had a Landing screen; App.jsx went straight to Auth). Purely
- * static/illustrative - the "72% Match Score" card is decorative, not
- * real data, matching design-reference.html's own mockup.
+ * before Auth. Purely static/illustrative - the "72% Match Score" card
+ * is decorative, not real data.
+ *
+ * Phase 12: stays outside the app shell (no sidebar/top bar for a
+ * logged-out visitor) - restyled to the Design System v2 tokens, with
+ * the gradient button/icon fills replaced by solid accent per the
+ * "no gradients" rule.
  */
 export default function LandingScreen({ onStart }) {
   return (
     <div className="mx-auto max-w-3xl px-4 pb-16 pt-14 text-center">
       <span
-        className="animate-pop-in mb-6 inline-flex items-center gap-1.5 rounded-full bg-accent-tint px-3.5 py-1.5 text-xs font-bold text-accent-dark opacity-0"
+        className="animate-pop-in mb-6 inline-flex items-center gap-1.5 rounded-full border border-border px-3.5 py-1.5 text-xs font-bold text-accent opacity-0"
         style={{ animationDelay: '30ms' }}
       >
         ✦ Built entirely in Java — Spring Boot + React
@@ -43,10 +46,7 @@ export default function LandingScreen({ onStart }) {
       >
         See exactly which skills stand
         <br />
-        between you and{' '}
-        <span className="bg-gradient-to-br from-accent to-violet bg-clip-text text-transparent">
-          the job.
-        </span>
+        between you and <span className="text-accent">the job.</span>
       </h1>
 
       <p
@@ -60,7 +60,7 @@ export default function LandingScreen({ onStart }) {
       <button
         type="button"
         onClick={onStart}
-        className="group animate-pop-in inline-flex items-center gap-2 rounded-md bg-gradient-to-br from-accent to-violet px-6 py-3.5 text-sm font-bold text-white opacity-0 shadow-[0_8px_18px_rgba(42,110,224,0.28)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(42,110,224,0.36)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white active:scale-[0.97]"
+        className="group animate-pop-in inline-flex items-center gap-2 rounded-md bg-accent px-6 py-3.5 text-sm font-bold text-white opacity-0 transition-colors hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white active:scale-[0.97]"
         style={{ animationDelay: '240ms' }}
       >
         <svg
@@ -78,17 +78,17 @@ export default function LandingScreen({ onStart }) {
       </button>
 
       <div
-        className="animate-pop-in animate-float-y mx-auto mt-11 flex max-w-md items-center gap-4 rounded-lg border border-border bg-surface-1 p-5 text-left opacity-0 shadow-sm transition-shadow hover:shadow-md"
+        className="animate-pop-in animate-float-y mx-auto mt-11 flex max-w-md items-center gap-4 rounded-lg border border-border bg-surface p-5 text-left opacity-0"
         style={{ animationDelay: '310ms' }}
       >
         <svg width="52" height="52" viewBox="0 0 120 120" aria-hidden="true">
-          <circle cx="60" cy="60" r="52" fill="none" stroke="#e6e4dc" strokeWidth="12" />
+          <circle cx="60" cy="60" r="52" fill="none" stroke="var(--color-border-strong)" strokeWidth="12" />
           <circle
             cx="60"
             cy="60"
             r="52"
             fill="none"
-            stroke="#2a6ee0"
+            stroke="var(--color-accent)"
             strokeWidth="12"
             strokeLinecap="round"
             strokeDasharray="235.2 326.7"
@@ -97,7 +97,7 @@ export default function LandingScreen({ onStart }) {
         </svg>
         <div>
           <div className="text-xs font-semibold text-text-muted">Backend Developer @ Acme Corp</div>
-          <div className="font-display text-xl font-extrabold text-text-primary">72% Match Score</div>
+          <div className="text-xl font-extrabold text-text-primary">72% Match Score</div>
         </div>
       </div>
 
@@ -105,10 +105,10 @@ export default function LandingScreen({ onStart }) {
         {STEPS.map((step, index) => (
           <div
             key={step.title}
-            className="group/step animate-pop-in rounded-lg border border-border bg-surface-1 p-6 text-left opacity-0 shadow-sm transition-shadow hover:shadow-md"
+            className="group/step animate-pop-in rounded-lg border border-border bg-surface p-6 text-left opacity-0 transition-colors hover:border-border-strong"
             style={{ animationDelay: `${50 + index * 90}ms` }}
           >
-            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-md bg-accent-tint text-accent-dark transition-transform duration-200 group-hover/step:-rotate-6 group-hover/step:scale-110">
+            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-md border border-border text-accent transition-transform duration-200 group-hover/step:-rotate-6 group-hover/step:scale-110">
               <svg
                 width="18"
                 height="18"

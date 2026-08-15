@@ -57,7 +57,7 @@ export default function SkillsChecklist({ selectedSkills, onChange }) {
   }
 
   return (
-    <fieldset className="rounded-lg border border-border bg-surface-1 p-6 shadow-sm">
+    <fieldset className="rounded-lg border border-border bg-surface p-6">
       <legend className="mb-3 text-sm font-bold text-text-primary">
         Required skills{' '}
         <span className="font-normal text-text-muted">(tick what the JD asks for)</span>

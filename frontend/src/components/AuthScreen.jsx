@@ -7,11 +7,9 @@ import { login, signup } from '../api'
  * name field. On success, hands the {token, name, email} back up to App
  * via onAuthSuccess, which is what actually unlocks the rest of the app.
  *
- * Phase 11: restyled to match design-reference.html's Auth card (avatar
- * mark, gradient primary button, warm-neutral surfaces). The reference
- * itself only mocks a single login card with no visible mode switch -
- * kept our existing Log in/Sign up toggle rather than adopting that,
- * since removing it would be a functional change, not a visual one.
+ * Phase 12: restyled to Design System v2 tokens - stays outside the app
+ * shell (no sidebar/top bar pre-login), solid accent button instead of
+ * the old gradient.
  */
 export default function AuthScreen({ onAuthSuccess }) {
   const [mode, setMode] = useState('login') // 'login' | 'signup'
@@ -57,13 +55,13 @@ export default function AuthScreen({ onAuthSuccess }) {
   }
 
   const fieldClasses =
-    'w-full rounded-md border border-border bg-surface-1 p-3 text-sm text-text-primary transition-[border-color,box-shadow] focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-tint'
+    'w-full rounded-md border border-border bg-surface p-3 text-sm text-text-primary transition-[border-color,box-shadow] focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent'
   const labelClasses = 'mb-1.5 block text-xs font-bold text-text-secondary'
 
   return (
     <div className="animate-pop-in mx-auto mt-16 w-full max-w-sm px-4 opacity-0">
-      <div className="rounded-lg border border-border bg-surface-1 p-10 shadow-sm">
-        <div className="mx-auto mb-4 flex h-[52px] w-[52px] items-center justify-center rounded-md bg-gradient-to-br from-accent to-violet shadow-[0_8px_18px_rgba(42,110,224,0.3)]">
+      <div className="rounded-lg border border-border bg-surface p-10">
+        <div className="mx-auto mb-4 flex h-[52px] w-[52px] items-center justify-center rounded-md bg-accent">
           <svg
             width="24"
             height="24"
@@ -88,7 +86,7 @@ export default function AuthScreen({ onAuthSuccess }) {
         </p>
 
         <div
-          className="mb-5 flex gap-1 rounded-full border border-border bg-surface-2 p-1 text-sm"
+          className="mb-5 flex gap-1 rounded-md border border-border bg-surface-raised p-1 text-sm"
           role="group"
           aria-label="Auth mode"
         >
@@ -96,10 +94,10 @@ export default function AuthScreen({ onAuthSuccess }) {
             type="button"
             aria-pressed={mode === 'login'}
             onClick={() => switchMode('login')}
-            className={`flex-1 rounded-full px-3 py-1.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-inset ${
+            className={`flex-1 rounded-md px-3 py-1.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-inset ${
               mode === 'login'
-                ? 'bg-surface-1 text-accent-dark shadow-sm focus:ring-accent'
-                : 'text-text-secondary hover:text-accent-dark focus:ring-accent'
+                ? 'bg-surface text-accent shadow-sm focus:ring-accent'
+                : 'text-text-secondary hover:text-text-primary focus:ring-accent'
             }`}
           >
             Log in
@@ -108,10 +106,10 @@ export default function AuthScreen({ onAuthSuccess }) {
             type="button"
             aria-pressed={mode === 'signup'}
             onClick={() => switchMode('signup')}
-            className={`flex-1 rounded-full px-3 py-1.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-inset ${
+            className={`flex-1 rounded-md px-3 py-1.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-inset ${
               mode === 'signup'
-                ? 'bg-surface-1 text-accent-dark shadow-sm focus:ring-accent'
-                : 'text-text-secondary hover:text-accent-dark focus:ring-accent'
+                ? 'bg-surface text-accent shadow-sm focus:ring-accent'
+                : 'text-text-secondary hover:text-text-primary focus:ring-accent'
             }`}
           >
             Sign up
@@ -175,7 +173,7 @@ export default function AuthScreen({ onAuthSuccess }) {
           <button
             type="submit"
             disabled={submitting}
-            className="mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-gradient-to-br from-accent to-violet px-4 py-3 text-sm font-bold text-white shadow-[0_8px_18px_rgba(42,110,224,0.28)] transition-[transform,box-shadow,opacity] hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(42,110,224,0.36)] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white active:scale-[0.97] disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-50 disabled:shadow-none"
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting
               ? mode === 'login' ? 'Logging in...' : 'Creating account...'
