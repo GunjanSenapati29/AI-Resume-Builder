@@ -263,11 +263,51 @@ rejection, and duplicate-email rejection all confirmed working.
   quoted numbers (56% match, 5 matched, 4 missing ranked easiest-first,
   4 underemphasized) are real, not estimated.
 
-**Phase 11 (visual redesign v1.1) complete.** Phase 12 next = App Shell
-Migration — rebuild the layout as sidebar+topbar with dark/light theme
-support, and move the existing Landing, Auth, Upload & Compare, and
-Processing screens into the new shell, reusing their existing logic. No
-new feature logic in Phase 12 — layout and theming only.
+**Phase 12 (App Shell Migration) complete, committed as d08476a.**
+Phase 13 next = ATS Compatibility Analyzer.
+
+## Feature Roadmap (Phase 13-27)
+
+- **Phase 13 - ATS Compatibility Analyzer**: rule-based checks for
+  resume formatting/parseability issues (contact info format, section
+  headers, tables/graphics that break parsers), with plain-language
+  fixes and a 0-100 score.
+- **Phase 14 - Skill Evidence Analyzer**: for each matched skill,
+  classify evidence as Strong/Moderate/Weak/No Evidence based on
+  whether it appears in Skills only, or also in Projects and/or
+  Experience.
+- **Phase 15 - Skill Gap Priority Classification**: classify each
+  missing skill as Critical/Important/Optional and Learn
+  First/Next/Later, based on how often it appears across the user's
+  analyzed JDs and how central it is to the target role.
+- **Phase 16 - Job Readiness Score**: one composite, explainable score
+  combining match %, ATS score, skill evidence, and gap severity, with
+  a visible weighted breakdown.
+- **Phase 17 - Personalized Learning Roadmap**: turns prioritized skill
+  gaps into a week-by-week study plan with topics and a practice task
+  per skill.
+- **Phase 18 - Project Recommendations**: suggests small project ideas
+  that would generate real evidence for the user's top skill gaps.
+- **Phase 19 - Interview Question Bank**: categorized practice
+  questions (Technical/Skill-Gap/Project/HR) with a stated reason for
+  each, drawn from matched skills, gaps, and the user's own projects.
+- **Phase 20 - Career Role Recommendation**: suggests which role
+  categories the user's skill profile is strongest for, based on
+  aggregate match history.
+- **Phase 21 - Multi-Job/Multi-JD Comparison**: runs one resume against
+  multiple job descriptions at once and ranks them by fit.
+- **Phase 22 - Resume Builder**: create/edit/duplicate multiple resume
+  versions with structured sections and exportable PDF templates.
+- **Phase 23 - Resume Version Comparison**: compares two saved resume
+  versions against the same job description side by side.
+- **Phase 24 - Career Progress Dashboard**: aggregates Job Readiness
+  Score history into a trend view plus a home-screen summary.
+- **Phase 25 - Smart PDF Career Report**: exports a combined report
+  (score, gaps, roadmap, interview prep) as one polished PDF.
+- **Phase 26 - Full Testing Pass**: systematic manual and edge-case
+  testing across all Phase 12-25 features.
+- **Phase 27 - Polish, Docs, Tag v2.0**: UI polish pass, README/demo
+  script update, final commit tagged v2.0.
 
 ## Design System v2 (Phase 12+)
 
