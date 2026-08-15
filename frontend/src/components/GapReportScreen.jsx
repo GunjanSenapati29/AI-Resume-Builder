@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import MatchMeter from './MatchMeter'
 import SkillSection from './SkillSection'
+import AtsSection from './AtsSection'
 import { fetchReportPdf } from '../api'
 import { formatDate } from '../dateFormat'
 
@@ -21,6 +22,9 @@ import { formatDate } from '../dateFormat'
  * its own "Back to history" link already covers that.
  *
  * Phase 12 - restyled to Design System v2 tokens.
+ *
+ * Phase 13 - adds the ATS Compatibility section below the existing
+ * skill columns; doesn't read or affect matched/missing/underemphasized.
  */
 export default function GapReportScreen({ report, onStartOver }) {
   const matchedCount = report.matched.length
@@ -113,6 +117,8 @@ export default function GapReportScreen({ report, onStartOver }) {
           emptyText="Nothing underemphasized."
         />
       </div>
+
+      <AtsSection atsScore={report.atsScore} atsIssues={report.atsIssues} />
 
       <div className="flex flex-col items-end gap-2">
         <button

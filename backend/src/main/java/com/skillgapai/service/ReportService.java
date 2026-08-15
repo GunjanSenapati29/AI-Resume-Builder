@@ -1,13 +1,19 @@
 package com.skillgapai.service;
 
+import com.skillgapai.ats.AtsAnalyzerService;
+import com.skillgapai.dto.AtsIssueView;
 import com.skillgapai.dto.GapReportSummary;
 import com.skillgapai.dto.GapReportView;
+import com.skillgapai.entity.AtsIssue;
 import com.skillgapai.entity.GapReport;
 import com.skillgapai.entity.Resume;
 import com.skillgapai.entity.User;
 import com.skillgapai.matching.SkillMatchingService;
+import com.skillgapai.model.AtsAnalysisResult;
+import com.skillgapai.model.AtsCheckResult;
 import com.skillgapai.model.GapAnalysisResult;
 import com.skillgapai.model.RequiredSkill;
+import com.skillgapai.repository.AtsIssueRepository;
 import com.skillgapai.repository.GapReportRepository;
 import com.skillgapai.repository.ResumeRepository;
 import com.skillgapai.repository.UserRepository;
@@ -30,6 +36,11 @@ import java.util.Optional;
  * the JWT by the controller, via SecurityContextHolder) instead of the
  * old fixed "guest" placeholder - reports are now attached to, and
  * scoped to, whoever is actually logged in.
+ *
+ * Phase 13: createReport also runs AtsAnalyzerService against the same
+ * resumeText and persists its per-check results as AtsIssue rows -
+ * additive alongside the existing skill-matching flow, not a
+ * replacement for any part of it.
  */
 @Service
 public class ReportService {
@@ -37,20 +48,26 @@ public class ReportService {
     private static final int JD_SNIPPET_LENGTH = 80;
 
     private final SkillMatchingService matchingService;
+    private final AtsAnalyzerService atsAnalyzerService;
     private final UserRepository userRepository;
     private final ResumeRepository resumeRepository;
     private final GapReportRepository gapReportRepository;
+    private final AtsIssueRepository atsIssueRepository;
     private final ObjectMapper objectMapper;
 
     public ReportService(SkillMatchingService matchingService,
+                          AtsAnalyzerService atsAnalyzerService,
                           UserRepository userRepository,
                           ResumeRepository resumeRepository,
                           GapReportRepository gapReportRepository,
+                          AtsIssueRepository atsIssueRepository,
                           ObjectMapper objectMapper) {
         this.matchingService = matchingService;
+        this.atsAnalyzerService = atsAnalyzerService;
         this.userRepository = userRepository;
         this.resumeRepository = resumeRepository;
         this.gapReportRepository = gapReportRepository;
+        this.atsIssueRepository = atsIssueRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -63,16 +80,26 @@ public class ReportService {
         Resume resume = resumeRepository.save(new Resume(user, resumeText, LocalDateTime.now()));
 
         GapAnalysisResult result = matchingService.analyze(resumeText, requiredSkills);
+        // Phase 13: runs alongside skill matching, off the same
+        // resumeText, in the same request/transaction - doesn't touch
+        // the matching result above at all.
+        AtsAnalysisResult atsResult = atsAnalyzerService.analyze(resumeText);
 
-        GapReport report = new GapReport(
+        GapReport report = gapReportRepository.save(new GapReport(
                 resume,
                 jdText,
                 toJson(result.getMatched()),
                 toJson(result.getMissing()),
                 toJson(result.getUnderemphasized()),
                 result.getMatchPercentage(),
-                LocalDateTime.now());
-        report = gapReportRepository.save(report);
+                atsResult.getScore(),
+                LocalDateTime.now()));
+
+        List<AtsIssue> issues = atsResult.getChecks().stream()
+                .map(check -> new AtsIssue(report, check.getTitle(), check.getDescription(),
+                        check.getFixSuggestion(), check.getSeverity()))
+                .toList();
+        atsIssueRepository.saveAll(issues);
 
         return new GapReportView(
                 report.getId(),
@@ -82,7 +109,9 @@ public class ReportService {
                 objectMapper.valueToTree(result.getMissing()),
                 objectMapper.valueToTree(result.getUnderemphasized()),
                 result.getMatchPercentage(),
-                report.getCreatedAt());
+                report.getCreatedAt(),
+                atsResult.getScore(),
+                atsResult.getChecks().stream().map(this::toAtsIssueView).toList());
     }
 
     /**
@@ -123,6 +152,10 @@ public class ReportService {
     }
 
     private GapReportView toView(GapReport report) {
+        List<AtsIssueView> atsIssues = atsIssueRepository.findByReport_IdOrderById(report.getId()).stream()
+                .map(this::toAtsIssueView)
+                .toList();
+
         return new GapReportView(
                 report.getId(),
                 report.getResume().getId(),
@@ -131,7 +164,17 @@ public class ReportService {
                 readJson(report.getMissingSkillsJson()),
                 readJson(report.getUnderemphasizedSkillsJson()),
                 report.getMatchPercentage(),
-                report.getCreatedAt());
+                report.getCreatedAt(),
+                report.getAtsScore(),
+                atsIssues);
+    }
+
+    private AtsIssueView toAtsIssueView(AtsCheckResult check) {
+        return new AtsIssueView(check.getTitle(), check.getDescription(), check.getFixSuggestion(), check.getSeverity());
+    }
+
+    private AtsIssueView toAtsIssueView(AtsIssue issue) {
+        return new AtsIssueView(issue.getTitle(), issue.getDescription(), issue.getFixSuggestion(), issue.getSeverity());
     }
 
     private String toJson(Object value) {

@@ -3,6 +3,7 @@ package com.skillgapai.dto;
 import tools.jackson.databind.JsonNode;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * JSON shape returned by both POST /api/match and GET /api/reports/{id} -
@@ -14,6 +15,11 @@ import java.time.LocalDateTime;
  * it by reading the matched_skills_json/etc. columns back out of MySQL -
  * JsonNode lets both paths produce identical output without needing
  * GapReport's stored JSON to round-trip through a Java object first.
+ *
+ * Phase 13: atsScore/atsIssues carry the ATS compatibility results from
+ * the same analysis run - atsIssues always lists all five checks
+ * (PASSED ones included), in the fixed order AtsAnalyzerService runs
+ * them.
  */
 public record GapReportView(
         Long id,
@@ -23,5 +29,7 @@ public record GapReportView(
         JsonNode missing,
         JsonNode underemphasized,
         double matchPercentage,
-        LocalDateTime createdAt) {
+        LocalDateTime createdAt,
+        int atsScore,
+        List<AtsIssueView> atsIssues) {
 }

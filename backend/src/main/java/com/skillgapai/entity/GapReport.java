@@ -18,6 +18,10 @@ import java.time.LocalDateTime;
  * (resume vs. a specific pasted JD), storing the matched/missing/
  * underemphasized skill lists as JSON text so we don't need extra
  * join tables for this first version.
+ *
+ * Phase 13: also carries the ATS compatibility score for the same run -
+ * the per-check breakdown behind that score lives in the separate
+ * ats_issues table (see AtsIssue), joined back to this row by report_id.
  */
 @Entity
 @Table(name = "gap_reports")
@@ -51,6 +55,13 @@ public class GapReport {
     @Column(name = "match_percentage", nullable = false)
     private double matchPercentage;
 
+    // Phase 13: added to an existing table that may already have rows,
+    // so this needs a DB-level default (not just nullable=false) - a
+    // plain NOT NULL with no default would fail the ALTER TABLE against
+    // any row created before this column existed.
+    @Column(name = "ats_score", nullable = false, columnDefinition = "INTEGER NOT NULL DEFAULT 0")
+    private int atsScore;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -60,13 +71,14 @@ public class GapReport {
 
     public GapReport(Resume resume, String jdText, String matchedSkillsJson,
                       String missingSkillsJson, String underemphasizedSkillsJson,
-                      double matchPercentage, LocalDateTime createdAt) {
+                      double matchPercentage, int atsScore, LocalDateTime createdAt) {
         this.resume = resume;
         this.jdText = jdText;
         this.matchedSkillsJson = matchedSkillsJson;
         this.missingSkillsJson = missingSkillsJson;
         this.underemphasizedSkillsJson = underemphasizedSkillsJson;
         this.matchPercentage = matchPercentage;
+        this.atsScore = atsScore;
         this.createdAt = createdAt;
     }
 
@@ -96,6 +108,10 @@ public class GapReport {
 
     public double getMatchPercentage() {
         return matchPercentage;
+    }
+
+    public int getAtsScore() {
+        return atsScore;
     }
 
     public LocalDateTime getCreatedAt() {
