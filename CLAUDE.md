@@ -269,8 +269,13 @@ History reports.**
 
 **Phase 14 (Skill Evidence Analyzer) complete, committed as e6d04a4,
 verified live in-browser (light/dark theme, evidence badges, old-report
-compatibility, no console errors).** Phase 15 next = Skill Gap Priority
-Classification.
+compatibility, no console errors).**
+
+**Phase 15 (Skill Gap Priority Classification) complete, committed as
+b86e794, verified live in-browser (cross-report recurrence scoring,
+priority badges scoped only to missing skills, light/dark theme,
+old-report compatibility, no console errors).** Phase 16 next = Job
+Readiness Score.
 
 ## Feature Roadmap (Phase 13-27)
 
