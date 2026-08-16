@@ -265,7 +265,12 @@ rejection, and duplicate-email rejection all confirmed working.
 
 **Phase 13 (ATS Compatibility Analyzer) complete, committed as
 43561a2, manually verified including regression check on pre-existing
-History reports.** Phase 14 next = Skill Evidence Analyzer.
+History reports.**
+
+**Phase 14 (Skill Evidence Analyzer) complete, committed as e6d04a4,
+verified live in-browser (light/dark theme, evidence badges, old-report
+compatibility, no console errors).** Phase 15 next = Skill Gap Priority
+Classification.
 
 ## Feature Roadmap (Phase 13-27)
 
