@@ -3,6 +3,7 @@ import MatchMeter from './MatchMeter'
 import SkillSection from './SkillSection'
 import AtsSection from './AtsSection'
 import SkillEvidenceSection from './SkillEvidenceSection'
+import JobReadinessSection from './JobReadinessSection'
 import { fetchReportPdf } from '../api'
 import { formatDate } from '../dateFormat'
 
@@ -35,6 +36,11 @@ import { formatDate } from '../dateFormat'
  * Missing list, by skillName, so SkillSection can render a priority
  * badge + learn-order line on that one chip - no separate list, and
  * Matched/Underemphasized are untouched.
+ *
+ * Phase 16 - adds the Job Readiness Score section right below the
+ * existing Match Score hero figure, showing the composite score plus its
+ * four weighted components (report.jobReadiness); doesn't read or affect
+ * anything else on the report.
  */
 export default function GapReportScreen({ report, onStartOver }) {
   const matchedCount = report.matched.length
@@ -107,6 +113,8 @@ export default function GapReportScreen({ report, onStartOver }) {
         missingCount={missingCount}
         underemphasizedCount={underemphasizedCount}
       />
+
+      <JobReadinessSection readiness={report.jobReadiness} />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <SkillSection

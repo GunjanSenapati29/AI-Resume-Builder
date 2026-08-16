@@ -1,7 +1,10 @@
 package com.skillgapai.entity;
 
+import com.skillgapai.model.JobReadinessLabel;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -22,6 +25,16 @@ import java.time.LocalDateTime;
  * Phase 13: also carries the ATS compatibility score for the same run -
  * the per-check breakdown behind that score lives in the separate
  * ats_issues table (see AtsIssue), joined back to this row by report_id.
+ *
+ * Phase 16: also carries the Job Readiness Score for the same run.
+ * skillMatchScore and atsScore aren't duplicated here - the composite
+ * reads them straight from matchPercentage/atsScore above - but
+ * evidenceStrengthScore and gapSeverityScore are derived from the
+ * separate skill_evidence/skill_gap_priorities tables, so they're stored
+ * here rather than recomputed on every read. Same DB-level-default
+ * pattern as ats_score: reports created before this phase existed just
+ * read back the default (0 / NOT_READY), same as ats_score reads back 0
+ * for reports created before Phase 13.
  */
 @Entity
 @Table(name = "gap_reports")
@@ -62,6 +75,21 @@ public class GapReport {
     @Column(name = "ats_score", nullable = false, columnDefinition = "INTEGER NOT NULL DEFAULT 0")
     private int atsScore;
 
+    // Phase 16: same ALTER-TABLE-safe-default reasoning as ats_score above.
+    @Column(name = "job_readiness_score", nullable = false, columnDefinition = "INTEGER NOT NULL DEFAULT 0")
+    private int jobReadinessScore;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "job_readiness_label", nullable = false, length = 15,
+            columnDefinition = "VARCHAR(15) NOT NULL DEFAULT 'NOT_READY'")
+    private JobReadinessLabel jobReadinessLabel;
+
+    @Column(name = "evidence_strength_score", nullable = false, columnDefinition = "INTEGER NOT NULL DEFAULT 0")
+    private int evidenceStrengthScore;
+
+    @Column(name = "gap_severity_score", nullable = false, columnDefinition = "INTEGER NOT NULL DEFAULT 0")
+    private int gapSeverityScore;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -71,7 +99,9 @@ public class GapReport {
 
     public GapReport(Resume resume, String jdText, String matchedSkillsJson,
                       String missingSkillsJson, String underemphasizedSkillsJson,
-                      double matchPercentage, int atsScore, LocalDateTime createdAt) {
+                      double matchPercentage, int atsScore, int jobReadinessScore,
+                      JobReadinessLabel jobReadinessLabel, int evidenceStrengthScore,
+                      int gapSeverityScore, LocalDateTime createdAt) {
         this.resume = resume;
         this.jdText = jdText;
         this.matchedSkillsJson = matchedSkillsJson;
@@ -79,6 +109,10 @@ public class GapReport {
         this.underemphasizedSkillsJson = underemphasizedSkillsJson;
         this.matchPercentage = matchPercentage;
         this.atsScore = atsScore;
+        this.jobReadinessScore = jobReadinessScore;
+        this.jobReadinessLabel = jobReadinessLabel;
+        this.evidenceStrengthScore = evidenceStrengthScore;
+        this.gapSeverityScore = gapSeverityScore;
         this.createdAt = createdAt;
     }
 
@@ -112,6 +146,22 @@ public class GapReport {
 
     public int getAtsScore() {
         return atsScore;
+    }
+
+    public int getJobReadinessScore() {
+        return jobReadinessScore;
+    }
+
+    public JobReadinessLabel getJobReadinessLabel() {
+        return jobReadinessLabel;
+    }
+
+    public int getEvidenceStrengthScore() {
+        return evidenceStrengthScore;
+    }
+
+    public int getGapSeverityScore() {
+        return gapSeverityScore;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -28,6 +28,10 @@ import java.util.List;
  * Phase 15: skillGapPriorities carries one entry per missing skill (same
  * order as `missing`) with its Critical/Important/Optional priority and
  * Learn First/Next/Later order - see SkillGapPriorityService.
+ *
+ * Phase 16: jobReadiness carries the composite Job Readiness Score built
+ * from matchPercentage, atsScore, and the evidence/priority results above -
+ * see JobReadinessService.
  */
 public record GapReportView(
         Long id,
@@ -41,5 +45,6 @@ public record GapReportView(
         int atsScore,
         List<AtsIssueView> atsIssues,
         List<SkillEvidenceView> skillEvidence,
-        List<SkillGapPriorityView> skillGapPriorities) {
+        List<SkillGapPriorityView> skillGapPriorities,
+        JobReadinessView jobReadiness) {
 }
