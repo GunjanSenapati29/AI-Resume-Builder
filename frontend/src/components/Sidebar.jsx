@@ -4,10 +4,6 @@ const PLANNED_NAV = [
     icon: <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />,
   },
   {
-    label: 'Skill Roadmap',
-    icon: <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />,
-  },
-  {
     label: 'Interview Prep',
     icon: <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />,
   },
@@ -58,15 +54,43 @@ function initials(name) {
   return (first + second).toUpperCase()
 }
 
+// Phase 17: the real (non-"Soon") nav items - Analyze Resume and Skill
+// Roadmap now both drive App.jsx's `page` state via `onNavigate`, so
+// both need active-state styling instead of Analyze Resume's old
+// always-on hardcoded style. The rest of PLANNED_NAV below stays
+// disabled, so the shape of the eventual product is still visible
+// without pretending those pages exist yet.
+function NavButton({ active, collapsed, label, icon, onClick }) {
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={onClick}
+        aria-current={active ? 'page' : undefined}
+        title={collapsed ? label : undefined}
+        className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-accent ${
+          active
+            ? 'bg-surface-raised text-accent'
+            : 'text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary'
+        } ${collapsed ? 'justify-center' : ''}`}
+      >
+        {icon}
+        {!collapsed && <span>{label}</span>}
+      </button>
+    </li>
+  )
+}
+
 /**
  * Phase 12: primary app navigation, replacing the old header pill nav.
- * Only "Analyze Resume" is wired to anything real - the rest of the
- * planned nav is visually present but disabled ("Soon"), so the shape
- * of the eventual product is visible without pretending those pages
- * exist yet. Collapses to icon-only via the `collapsed` prop, which
- * AppShell owns and TopBar's toggle button flips.
+ * Phase 17: Analyze Resume and Skill Roadmap are both wired to real
+ * pages now (see NavButton above) - the rest of the planned nav is still
+ * visually present but disabled ("Soon"), so the shape of the eventual
+ * product is visible without pretending those pages exist yet. Collapses
+ * to icon-only via the `collapsed` prop, which AppShell owns and
+ * TopBar's toggle button flips.
  */
-export default function Sidebar({ collapsed, user, onLogout }) {
+export default function Sidebar({ collapsed, user, onLogout, activePage, onNavigate }) {
   return (
     <aside
       className={`flex h-full flex-col border-r border-border bg-sidebar transition-[width] duration-200 ${
@@ -82,19 +106,25 @@ export default function Sidebar({ collapsed, user, onLogout }) {
 
       <nav className="flex-1 overflow-y-auto px-3 py-4" aria-label="Primary">
         <ul className="space-y-1">
-          <li>
-            <button
-              type="button"
-              aria-current="page"
-              title={collapsed ? 'Analyze Resume' : undefined}
-              className={`flex w-full items-center gap-3 rounded-md bg-surface-raised px-3 py-2.5 text-sm font-semibold text-accent focus:outline-none focus:ring-2 focus:ring-accent ${
-                collapsed ? 'justify-center' : ''
-              }`}
-            >
-              <AnalyzeIcon className="h-[18px] w-[18px] flex-none" />
-              {!collapsed && <span>Analyze Resume</span>}
-            </button>
-          </li>
+          <NavButton
+            active={activePage === 'analyze'}
+            collapsed={collapsed}
+            label="Analyze Resume"
+            icon={<AnalyzeIcon className="h-[18px] w-[18px] flex-none" />}
+            onClick={() => onNavigate('analyze')}
+          />
+
+          <NavButton
+            active={activePage === 'roadmap'}
+            collapsed={collapsed}
+            label="Skill Roadmap"
+            icon={
+              <NavIcon>
+                <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+              </NavIcon>
+            }
+            onClick={() => onNavigate('roadmap')}
+          />
 
           {PLANNED_NAV.map((item) => (
             <li key={item.label}>

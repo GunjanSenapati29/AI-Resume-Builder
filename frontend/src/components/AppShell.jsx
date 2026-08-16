@@ -15,8 +15,11 @@ const SMALL_SCREEN_QUERY = '(max-width: 1023px)'
  * via TopBar in between two such crossings is left alone, so opening
  * the sidebar on a phone doesn't get silently undone by an unrelated
  * resize event.
+ *
+ * Phase 17: `activePage`/`onNavigate` pass straight through to Sidebar -
+ * App.jsx owns the actual page state, AppShell just wires it up.
  */
-export default function AppShell({ user, onLogout, children }) {
+export default function AppShell({ user, onLogout, activePage, onNavigate, children }) {
   const [collapsed, setCollapsed] = useState(
     () => typeof window !== 'undefined' && window.matchMedia(SMALL_SCREEN_QUERY).matches,
   )
@@ -32,7 +35,7 @@ export default function AppShell({ user, onLogout, children }) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-bg">
-      <Sidebar collapsed={collapsed} user={user} onLogout={onLogout} />
+      <Sidebar collapsed={collapsed} user={user} onLogout={onLogout} activePage={activePage} onNavigate={onNavigate} />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar collapsed={collapsed} onToggleCollapse={() => setCollapsed((current) => !current)} user={user} />
         <main className="flex-1 overflow-y-auto">

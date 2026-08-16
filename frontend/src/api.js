@@ -127,6 +127,17 @@ export async function fetchReportById(id) {
   return response.json()
 }
 
+// Phase 17: the Learning Roadmap for the user's most recent report.
+// 204 means "no analyzed reports yet" - a normal empty state, not an
+// error, so this returns null for that case instead of throwing.
+export async function fetchLearningRoadmap() {
+  const response = await protectedFetch('/api/reports/latest/learning-roadmap')
+  if (response.status === 204) {
+    return null
+  }
+  return response.json()
+}
+
 // Phase 9: the PDF export. Can't just be a plain <a href> link since the
 // route needs the Authorization header like every other protected
 // route - so this fetches it as a blob and the caller turns that into a
