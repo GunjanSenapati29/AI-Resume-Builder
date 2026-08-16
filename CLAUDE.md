@@ -308,6 +308,54 @@ in-browser (score panel renders correctly in light/dark theme, all four
 component rows visible with correct color-coded bars, no console
 errors).
 
+**Phase 17 (Learning Roadmap) complete, committed as 72ca46a.** Turns
+the missing/underemphasized skills from the user's MOST RECENT GapReport
+into a step-by-step study plan and activates the "Skill Roadmap" sidebar
+item, which had been a disabled "Soon" placeholder since Phase 12.
+
+Step 1 surfaced two mismatches with the original spec, resolved before
+writing code:
+- There was no existing routing pattern to mirror - "Analyze Resume" had
+  no `onClick` at all (this app has no router, just local state in
+  `App.jsx`), so this phase built the first real Sidebar-driven page
+  switch (`page` state in `App.jsx`; both Sidebar buttons now get real
+  `onClick`/`aria-current`), not just a wire-up of an existing pattern.
+- Phase 15's `SkillGapPriority` only has rows for MISSING skills, not
+  underemphasized ones. Resolved by showing the Critical/Important/
+  Optional tier badge only on missing-skill cards (which also sets the
+  Critical -> Optional sort order); underemphasized skills list after
+  with no tier badge.
+
+Content rule (the guardrail for this phase): every missing/
+underemphasized skill gets the exact same fixed 4-step template with
+only the skill name substituted in - no invented course names, tutorial
+titles, or URLs. The one exception is a fixed 9-skill list (Java,
+JavaScript, Python, React, Spring Boot, MySQL, Git, Docker, AWS) that
+also gets a link to that skill's real, stable, official documentation
+homepage; any other skill gets the 4 steps with no link.
+
+`LearningRoadmapService` (new `roadmap` package) computes this live on
+every page load straight from already-persisted data (the latest
+`GapReport`'s missing/underemphasized JSON plus Phase 15's
+`SkillGapPriority` rows) - a static template + fixed lookup table, not a
+scored value, so nothing new is persisted. `GET /api/reports/latest/
+learning-roadmap` returns 204 (not 404) when the user has no reports
+yet, since that's a normal empty state, not an error - the frontend
+shows "Analyze a resume first..." with a button back to Analyze Resume,
+not a broken or blank page. Doesn't modify any Phase 13-16 logic.
+
+Verified via live API calls (204 for a zero-report user; a mixed-tier
+report returning missing skills correctly sorted Important before
+Optional, each with the exact 4-step template; a skill outside the
+9-skill list correctly getting `officialDocUrl: null`; an
+underemphasized skill correctly getting `priorityTier: null` but still
+its doc link where applicable; the roadmap correctly scoped to only the
+most recent of two reports) and live in-browser (Sidebar's Skill Roadmap
+item activates/highlights correctly in both collapsed/expanded and
+light/dark, two-way navigation with Analyze Resume works, a real
+report's roadmap and the zero-report empty state both render correctly,
+no console errors).
+
 ## Feature Roadmap (Phase 13-27)
 
 - **Phase 13 - ATS Compatibility Analyzer**: rule-based checks for
