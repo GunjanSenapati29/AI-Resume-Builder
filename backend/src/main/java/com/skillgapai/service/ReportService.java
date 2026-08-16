@@ -5,10 +5,12 @@ import com.skillgapai.dto.AtsIssueView;
 import com.skillgapai.dto.GapReportSummary;
 import com.skillgapai.dto.GapReportView;
 import com.skillgapai.dto.SkillEvidenceView;
+import com.skillgapai.dto.SkillGapPriorityView;
 import com.skillgapai.entity.AtsIssue;
 import com.skillgapai.entity.GapReport;
 import com.skillgapai.entity.Resume;
 import com.skillgapai.entity.SkillEvidence;
+import com.skillgapai.entity.SkillGapPriority;
 import com.skillgapai.entity.User;
 import com.skillgapai.evidence.SkillEvidenceService;
 import com.skillgapai.matching.SkillMatchingService;
@@ -17,10 +19,13 @@ import com.skillgapai.model.AtsCheckResult;
 import com.skillgapai.model.GapAnalysisResult;
 import com.skillgapai.model.RequiredSkill;
 import com.skillgapai.model.SkillEvidenceResult;
+import com.skillgapai.model.SkillGapPriorityResult;
+import com.skillgapai.priority.SkillGapPriorityService;
 import com.skillgapai.repository.AtsIssueRepository;
 import com.skillgapai.repository.GapReportRepository;
 import com.skillgapai.repository.ResumeRepository;
 import com.skillgapai.repository.SkillEvidenceRepository;
+import com.skillgapai.repository.SkillGapPriorityRepository;
 import com.skillgapai.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,6 +56,13 @@ import java.util.Optional;
  * matched skills from the same analysis run and persists the result as
  * SkillEvidence rows - again additive, doesn't touch the matching or
  * ATS results above it.
+ *
+ * Phase 15: createReport also runs SkillGapPriorityService against the
+ * missing skills from the same analysis run (plus this user's past
+ * reports and the current JD text) and persists the result as
+ * SkillGapPriority rows - again additive, doesn't touch anything above
+ * it. Must run before the current report is saved, since cross-report
+ * recurrence is counted against the user's OTHER, already-saved reports.
  */
 @Service
 public class ReportService {
@@ -60,30 +72,36 @@ public class ReportService {
     private final SkillMatchingService matchingService;
     private final AtsAnalyzerService atsAnalyzerService;
     private final SkillEvidenceService skillEvidenceService;
+    private final SkillGapPriorityService skillGapPriorityService;
     private final UserRepository userRepository;
     private final ResumeRepository resumeRepository;
     private final GapReportRepository gapReportRepository;
     private final AtsIssueRepository atsIssueRepository;
     private final SkillEvidenceRepository skillEvidenceRepository;
+    private final SkillGapPriorityRepository skillGapPriorityRepository;
     private final ObjectMapper objectMapper;
 
     public ReportService(SkillMatchingService matchingService,
                           AtsAnalyzerService atsAnalyzerService,
                           SkillEvidenceService skillEvidenceService,
+                          SkillGapPriorityService skillGapPriorityService,
                           UserRepository userRepository,
                           ResumeRepository resumeRepository,
                           GapReportRepository gapReportRepository,
                           AtsIssueRepository atsIssueRepository,
                           SkillEvidenceRepository skillEvidenceRepository,
+                          SkillGapPriorityRepository skillGapPriorityRepository,
                           ObjectMapper objectMapper) {
         this.matchingService = matchingService;
         this.atsAnalyzerService = atsAnalyzerService;
         this.skillEvidenceService = skillEvidenceService;
+        this.skillGapPriorityService = skillGapPriorityService;
         this.userRepository = userRepository;
         this.resumeRepository = resumeRepository;
         this.gapReportRepository = gapReportRepository;
         this.atsIssueRepository = atsIssueRepository;
         this.skillEvidenceRepository = skillEvidenceRepository;
+        this.skillGapPriorityRepository = skillGapPriorityRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -104,6 +122,11 @@ public class ReportService {
         // list the analysis above just produced - runs after it, reads
         // it, doesn't change it.
         List<SkillEvidenceResult> evidenceResults = skillEvidenceService.analyze(resumeText, result.getMatched());
+        // Phase 15: off the missing-skill list above, this JD's text, and
+        // this user's past reports - must run before this report is
+        // saved below, since "past reports" means every OTHER report
+        // this query would find.
+        List<SkillGapPriorityResult> priorityResults = skillGapPriorityService.analyze(userEmail, jdText, result.getMissing());
 
         GapReport report = gapReportRepository.save(new GapReport(
                 resume,
@@ -128,6 +151,13 @@ public class ReportService {
                 .toList();
         skillEvidenceRepository.saveAll(evidenceRows);
 
+        List<SkillGapPriority> priorityRows = priorityResults.stream()
+                .map(priority -> new SkillGapPriority(report, priority.getSkillName(), priority.getCrossReportCount(),
+                        priority.getInJdMentionCount(), priority.getPriorityScore(), priority.getPriorityTier(),
+                        priority.getLearnOrder()))
+                .toList();
+        skillGapPriorityRepository.saveAll(priorityRows);
+
         return new GapReportView(
                 report.getId(),
                 resume.getId(),
@@ -139,7 +169,8 @@ public class ReportService {
                 report.getCreatedAt(),
                 atsResult.getScore(),
                 atsResult.getChecks().stream().map(this::toAtsIssueView).toList(),
-                evidenceResults.stream().map(this::toSkillEvidenceView).toList());
+                evidenceResults.stream().map(this::toSkillEvidenceView).toList(),
+                priorityResults.stream().map(this::toSkillGapPriorityView).toList());
     }
 
     /**
@@ -186,6 +217,9 @@ public class ReportService {
         List<SkillEvidenceView> skillEvidence = skillEvidenceRepository.findByReport_IdOrderById(report.getId()).stream()
                 .map(this::toSkillEvidenceView)
                 .toList();
+        List<SkillGapPriorityView> skillGapPriorities = skillGapPriorityRepository.findByReport_IdOrderById(report.getId()).stream()
+                .map(this::toSkillGapPriorityView)
+                .toList();
 
         return new GapReportView(
                 report.getId(),
@@ -198,7 +232,8 @@ public class ReportService {
                 report.getCreatedAt(),
                 report.getAtsScore(),
                 atsIssues,
-                skillEvidence);
+                skillEvidence,
+                skillGapPriorities);
     }
 
     private AtsIssueView toAtsIssueView(AtsCheckResult check) {
@@ -217,6 +252,18 @@ public class ReportService {
     private SkillEvidenceView toSkillEvidenceView(SkillEvidence evidence) {
         return new SkillEvidenceView(evidence.getSkillName(), evidence.isInSkillsSection(),
                 evidence.isInProjectsSection(), evidence.isInExperienceSection(), evidence.getEvidenceLevel());
+    }
+
+    private SkillGapPriorityView toSkillGapPriorityView(SkillGapPriorityResult priority) {
+        return new SkillGapPriorityView(priority.getSkillName(), priority.getCrossReportCount(),
+                priority.getInJdMentionCount(), priority.getPriorityScore(), priority.getPriorityTier(),
+                priority.getLearnOrder());
+    }
+
+    private SkillGapPriorityView toSkillGapPriorityView(SkillGapPriority priority) {
+        return new SkillGapPriorityView(priority.getSkillName(), priority.getCrossReportCount(),
+                priority.getInJdMentionCount(), priority.getPriorityScore(), priority.getPriorityTier(),
+                priority.getLearnOrder());
     }
 
     private String toJson(Object value) {

@@ -24,6 +24,10 @@ import java.util.List;
  * Phase 14: skillEvidence carries one entry per matched skill (same
  * order as `matched`) with its Strong/Moderate/Weak/No Evidence
  * classification - see SkillEvidenceService.
+ *
+ * Phase 15: skillGapPriorities carries one entry per missing skill (same
+ * order as `missing`) with its Critical/Important/Optional priority and
+ * Learn First/Next/Later order - see SkillGapPriorityService.
  */
 public record GapReportView(
         Long id,
@@ -36,5 +40,6 @@ public record GapReportView(
         LocalDateTime createdAt,
         int atsScore,
         List<AtsIssueView> atsIssues,
-        List<SkillEvidenceView> skillEvidence) {
+        List<SkillEvidenceView> skillEvidence,
+        List<SkillGapPriorityView> skillGapPriorities) {
 }

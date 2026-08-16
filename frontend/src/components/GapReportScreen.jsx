@@ -29,11 +29,23 @@ import { formatDate } from '../dateFormat'
  *
  * Phase 14 - adds the Skill Evidence section below ATS Compatibility;
  * doesn't read or affect anything above it either.
+ *
+ * Phase 15 - attaches each missing skill's priority classification (from
+ * report.skillGapPriorities) onto the matching item in the existing
+ * Missing list, by skillName, so SkillSection can render a priority
+ * badge + learn-order line on that one chip - no separate list, and
+ * Matched/Underemphasized are untouched.
  */
 export default function GapReportScreen({ report, onStartOver }) {
   const matchedCount = report.matched.length
   const missingCount = report.missing.length
   const underemphasizedCount = report.underemphasized.length
+
+  const priorityBySkill = new Map((report.skillGapPriorities ?? []).map((p) => [p.skillName, p]))
+  const missingWithPriority = report.missing.map((item) => ({
+    ...item,
+    priority: priorityBySkill.get(item.skillName),
+  }))
 
   const [downloading, setDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState('')
@@ -108,7 +120,7 @@ export default function GapReportScreen({ report, onStartOver }) {
           variant="critical"
           title="Missing"
           subtitle="Ranked easiest to close first"
-          items={report.missing}
+          items={missingWithPriority}
           ordered
           emptyText="Every required skill was found - nothing missing."
         />

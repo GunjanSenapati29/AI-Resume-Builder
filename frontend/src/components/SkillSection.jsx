@@ -18,6 +18,38 @@ const MATCH_TYPE_LABEL = {
   FUZZY: 'possible typo',
 }
 
+// Phase 15: priority badge for missing-skill rows only (see
+// GapReportScreen, which is the only caller that attaches `priority` to
+// an item). Same colored-badge pattern AtsSection/SkillEvidenceSection
+// use - Critical reuses the fixed critical status color, Important
+// reuses warning, and Optional uses the theme's accent token directly
+// via CSS var since accent isn't one of the fixed status colors.
+const PRIORITY_VARIANTS = {
+  CRITICAL: { label: 'Critical', hex: STATUS_COLORS.critical },
+  IMPORTANT: { label: 'Important', hex: STATUS_COLORS.warning },
+  OPTIONAL: { label: 'Optional', hex: 'var(--color-accent)' },
+}
+
+const LEARN_ORDER_LABELS = {
+  LEARN_FIRST: 'Learn First',
+  LEARN_NEXT: 'Learn Next',
+  LEARN_LATER: 'Learn Later',
+}
+
+// The "why" behind the priority - how many other reports also needed
+// this skill, and how heavily this JD emphasizes it - same "never show
+// a result without showing why" principle as the reason text below it.
+function priorityReason(priority) {
+  const parts = []
+  if (priority.crossReportCount > 0) {
+    parts.push(`required in ${priority.crossReportCount} other report${priority.crossReportCount === 1 ? '' : 's'}`)
+  }
+  if (priority.inJdMentionCount > 0) {
+    parts.push(`mentioned ${priority.inJdMentionCount}× in this JD`)
+  }
+  return parts.length > 0 ? parts.join(', ') : 'first time seen for this skill'
+}
+
 function tagsFor(item) {
   const tags = []
   if (item.matchType && item.matchType !== 'NOT_FOUND') {
@@ -50,6 +82,17 @@ function Chip({ variant, item, index, ordered }) {
               TOP
             </span>
           )}
+          {item.priority && (
+            <span
+              className="rounded-full border px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-wide"
+              style={{
+                borderColor: PRIORITY_VARIANTS[item.priority.priorityTier].hex,
+                color: PRIORITY_VARIANTS[item.priority.priorityTier].hex,
+              }}
+            >
+              {PRIORITY_VARIANTS[item.priority.priorityTier].label}
+            </span>
+          )}
         </div>
         {/* The "why" - every result shows a reason, never just a verdict. */}
         <span className="mt-0.5 block text-xs font-normal text-text-muted">
@@ -57,6 +100,11 @@ function Chip({ variant, item, index, ordered }) {
           {tags && item.reason ? ' — ' : ''}
           {item.reason}
         </span>
+        {item.priority && (
+          <span className="mt-0.5 block text-[11px] font-semibold text-text-secondary">
+            {LEARN_ORDER_LABELS[item.priority.learnOrder]} — {priorityReason(item.priority)}
+          </span>
+        )}
       </div>
     </li>
   )
@@ -68,6 +116,11 @@ function Chip({ variant, item, index, ordered }) {
  * tinted chips. `ordered` numbers the list for Missing, where the order
  * itself (easiest to close first) is part of the meaning, and marks the
  * first item TOP priority.
+ *
+ * Phase 15: an item's optional `priority` field (attached only to the
+ * Missing section's items, by GapReportScreen) adds a Critical/Important/
+ * Optional badge and a Learn First/Next/Later line to that chip - see
+ * SkillGapPriorityService for where the data comes from.
  */
 export default function SkillSection({ variant, title, subtitle, items, emptyText, ordered }) {
   const { Icon, hex } = VARIANTS[variant]
