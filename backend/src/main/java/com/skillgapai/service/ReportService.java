@@ -4,18 +4,23 @@ import com.skillgapai.ats.AtsAnalyzerService;
 import com.skillgapai.dto.AtsIssueView;
 import com.skillgapai.dto.GapReportSummary;
 import com.skillgapai.dto.GapReportView;
+import com.skillgapai.dto.SkillEvidenceView;
 import com.skillgapai.entity.AtsIssue;
 import com.skillgapai.entity.GapReport;
 import com.skillgapai.entity.Resume;
+import com.skillgapai.entity.SkillEvidence;
 import com.skillgapai.entity.User;
+import com.skillgapai.evidence.SkillEvidenceService;
 import com.skillgapai.matching.SkillMatchingService;
 import com.skillgapai.model.AtsAnalysisResult;
 import com.skillgapai.model.AtsCheckResult;
 import com.skillgapai.model.GapAnalysisResult;
 import com.skillgapai.model.RequiredSkill;
+import com.skillgapai.model.SkillEvidenceResult;
 import com.skillgapai.repository.AtsIssueRepository;
 import com.skillgapai.repository.GapReportRepository;
 import com.skillgapai.repository.ResumeRepository;
+import com.skillgapai.repository.SkillEvidenceRepository;
 import com.skillgapai.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +46,11 @@ import java.util.Optional;
  * resumeText and persists its per-check results as AtsIssue rows -
  * additive alongside the existing skill-matching flow, not a
  * replacement for any part of it.
+ *
+ * Phase 14: createReport also runs SkillEvidenceService against the
+ * matched skills from the same analysis run and persists the result as
+ * SkillEvidence rows - again additive, doesn't touch the matching or
+ * ATS results above it.
  */
 @Service
 public class ReportService {
@@ -49,25 +59,31 @@ public class ReportService {
 
     private final SkillMatchingService matchingService;
     private final AtsAnalyzerService atsAnalyzerService;
+    private final SkillEvidenceService skillEvidenceService;
     private final UserRepository userRepository;
     private final ResumeRepository resumeRepository;
     private final GapReportRepository gapReportRepository;
     private final AtsIssueRepository atsIssueRepository;
+    private final SkillEvidenceRepository skillEvidenceRepository;
     private final ObjectMapper objectMapper;
 
     public ReportService(SkillMatchingService matchingService,
                           AtsAnalyzerService atsAnalyzerService,
+                          SkillEvidenceService skillEvidenceService,
                           UserRepository userRepository,
                           ResumeRepository resumeRepository,
                           GapReportRepository gapReportRepository,
                           AtsIssueRepository atsIssueRepository,
+                          SkillEvidenceRepository skillEvidenceRepository,
                           ObjectMapper objectMapper) {
         this.matchingService = matchingService;
         this.atsAnalyzerService = atsAnalyzerService;
+        this.skillEvidenceService = skillEvidenceService;
         this.userRepository = userRepository;
         this.resumeRepository = resumeRepository;
         this.gapReportRepository = gapReportRepository;
         this.atsIssueRepository = atsIssueRepository;
+        this.skillEvidenceRepository = skillEvidenceRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -84,6 +100,10 @@ public class ReportService {
         // resumeText, in the same request/transaction - doesn't touch
         // the matching result above at all.
         AtsAnalysisResult atsResult = atsAnalyzerService.analyze(resumeText);
+        // Phase 14: also off the same resumeText, plus the matched-skill
+        // list the analysis above just produced - runs after it, reads
+        // it, doesn't change it.
+        List<SkillEvidenceResult> evidenceResults = skillEvidenceService.analyze(resumeText, result.getMatched());
 
         GapReport report = gapReportRepository.save(new GapReport(
                 resume,
@@ -101,6 +121,13 @@ public class ReportService {
                 .toList();
         atsIssueRepository.saveAll(issues);
 
+        List<SkillEvidence> evidenceRows = evidenceResults.stream()
+                .map(evidence -> new SkillEvidence(report, evidence.getSkillName(),
+                        evidence.isInSkillsSection(), evidence.isInProjectsSection(),
+                        evidence.isInExperienceSection(), evidence.getEvidenceLevel()))
+                .toList();
+        skillEvidenceRepository.saveAll(evidenceRows);
+
         return new GapReportView(
                 report.getId(),
                 resume.getId(),
@@ -111,7 +138,8 @@ public class ReportService {
                 result.getMatchPercentage(),
                 report.getCreatedAt(),
                 atsResult.getScore(),
-                atsResult.getChecks().stream().map(this::toAtsIssueView).toList());
+                atsResult.getChecks().stream().map(this::toAtsIssueView).toList(),
+                evidenceResults.stream().map(this::toSkillEvidenceView).toList());
     }
 
     /**
@@ -155,6 +183,9 @@ public class ReportService {
         List<AtsIssueView> atsIssues = atsIssueRepository.findByReport_IdOrderById(report.getId()).stream()
                 .map(this::toAtsIssueView)
                 .toList();
+        List<SkillEvidenceView> skillEvidence = skillEvidenceRepository.findByReport_IdOrderById(report.getId()).stream()
+                .map(this::toSkillEvidenceView)
+                .toList();
 
         return new GapReportView(
                 report.getId(),
@@ -166,7 +197,8 @@ public class ReportService {
                 report.getMatchPercentage(),
                 report.getCreatedAt(),
                 report.getAtsScore(),
-                atsIssues);
+                atsIssues,
+                skillEvidence);
     }
 
     private AtsIssueView toAtsIssueView(AtsCheckResult check) {
@@ -175,6 +207,16 @@ public class ReportService {
 
     private AtsIssueView toAtsIssueView(AtsIssue issue) {
         return new AtsIssueView(issue.getTitle(), issue.getDescription(), issue.getFixSuggestion(), issue.getSeverity());
+    }
+
+    private SkillEvidenceView toSkillEvidenceView(SkillEvidenceResult evidence) {
+        return new SkillEvidenceView(evidence.getSkillName(), evidence.isInSkillsSection(),
+                evidence.isInProjectsSection(), evidence.isInExperienceSection(), evidence.getEvidenceLevel());
+    }
+
+    private SkillEvidenceView toSkillEvidenceView(SkillEvidence evidence) {
+        return new SkillEvidenceView(evidence.getSkillName(), evidence.isInSkillsSection(),
+                evidence.isInProjectsSection(), evidence.isInExperienceSection(), evidence.getEvidenceLevel());
     }
 
     private String toJson(Object value) {

@@ -20,6 +20,10 @@ import java.util.List;
  * the same analysis run - atsIssues always lists all five checks
  * (PASSED ones included), in the fixed order AtsAnalyzerService runs
  * them.
+ *
+ * Phase 14: skillEvidence carries one entry per matched skill (same
+ * order as `matched`) with its Strong/Moderate/Weak/No Evidence
+ * classification - see SkillEvidenceService.
  */
 public record GapReportView(
         Long id,
@@ -31,5 +35,6 @@ public record GapReportView(
         double matchPercentage,
         LocalDateTime createdAt,
         int atsScore,
-        List<AtsIssueView> atsIssues) {
+        List<AtsIssueView> atsIssues,
+        List<SkillEvidenceView> skillEvidence) {
 }

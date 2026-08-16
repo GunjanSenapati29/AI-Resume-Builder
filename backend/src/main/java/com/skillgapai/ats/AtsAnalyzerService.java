@@ -3,12 +3,16 @@ package com.skillgapai.ats;
 import com.skillgapai.model.AtsAnalysisResult;
 import com.skillgapai.model.AtsCheckResult;
 import com.skillgapai.model.AtsSeverity;
+import com.skillgapai.model.ResumeSectionBlocks;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -124,19 +128,7 @@ public class AtsAnalyzerService {
     }
 
     private AtsCheckResult checkSectionHeaders(String[] lines) {
-        Set<String> found = new LinkedHashSet<>();
-        for (String rawLine : lines) {
-            String line = rawLine.strip();
-            if (line.isEmpty() || line.split("\\s+").length > MAX_HEADING_LINE_WORDS) {
-                continue;
-            }
-            for (String heading : REQUIRED_HEADINGS) {
-                if (!found.contains(heading)
-                        && Pattern.compile("(?i)\\b" + heading + "\\b").matcher(line).find()) {
-                    found.add(heading);
-                }
-            }
-        }
+        Set<String> found = findHeadingLineIndices(lines).keySet();
 
         int foundCount = found.size();
         if (foundCount == REQUIRED_HEADINGS.length) {
@@ -158,6 +150,63 @@ public class AtsAnalyzerService {
                 "Add a standard heading (on its own line) for each missing section - " + missingList
                         + " - so ATS parsers can identify and bucket that content correctly.",
                 severity);
+    }
+
+    /**
+     * The heading-detection loop checkSectionHeaders() uses to decide
+     * presence/absence - factored out so Phase 14's extractSectionBlocks()
+     * can reuse the exact same detection (same regex, same "first line it
+     * appears on wins") instead of re-implementing it. Returns each found
+     * heading mapped to the line index it was first seen on.
+     */
+    private Map<String, Integer> findHeadingLineIndices(String[] lines) {
+        Map<String, Integer> indices = new LinkedHashMap<>();
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].strip();
+            if (line.isEmpty() || line.split("\\s+").length > MAX_HEADING_LINE_WORDS) {
+                continue;
+            }
+            for (String heading : REQUIRED_HEADINGS) {
+                if (!indices.containsKey(heading)
+                        && Pattern.compile("(?i)\\b" + heading + "\\b").matcher(line).find()) {
+                    indices.put(heading, i);
+                }
+            }
+        }
+        return indices;
+    }
+
+    /**
+     * Phase 14: slices the resume's Skills/Experience/Projects section
+     * text out of the whole resume, using the same heading positions
+     * checkSectionHeaders() finds. Each section's text runs from the line
+     * after its heading up to whichever of the four headings comes next
+     * (or the end of the resume) - so SkillEvidenceService can check
+     * whether a skill is mentioned specifically within one section,
+     * rather than just somewhere in the resume as a whole. A heading that
+     * wasn't found yields an empty block for that section.
+     */
+    public ResumeSectionBlocks extractSectionBlocks(String resumeText) {
+        String text = resumeText == null ? "" : resumeText;
+        String[] lines = text.split("\n", -1);
+
+        Map<String, Integer> headingLineIndex = findHeadingLineIndices(lines);
+        List<Map.Entry<String, Integer>> orderedHeadings = new ArrayList<>(headingLineIndex.entrySet());
+        orderedHeadings.sort(Map.Entry.comparingByValue());
+
+        Map<String, String> blocks = new HashMap<>();
+        for (int i = 0; i < orderedHeadings.size(); i++) {
+            String heading = orderedHeadings.get(i).getKey();
+            int start = Math.min(orderedHeadings.get(i).getValue() + 1, lines.length);
+            int end = (i + 1 < orderedHeadings.size()) ? orderedHeadings.get(i + 1).getValue() : lines.length;
+            end = Math.max(start, end);
+            blocks.put(heading, String.join("\n", Arrays.copyOfRange(lines, start, end)));
+        }
+
+        return new ResumeSectionBlocks(
+                blocks.getOrDefault("Skills", ""),
+                blocks.getOrDefault("Experience", ""),
+                blocks.getOrDefault("Projects", ""));
     }
 
     // /api/match only ever receives already-extracted text, never the

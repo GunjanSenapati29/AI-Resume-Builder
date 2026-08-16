@@ -2,6 +2,7 @@ import { useState } from 'react'
 import MatchMeter from './MatchMeter'
 import SkillSection from './SkillSection'
 import AtsSection from './AtsSection'
+import SkillEvidenceSection from './SkillEvidenceSection'
 import { fetchReportPdf } from '../api'
 import { formatDate } from '../dateFormat'
 
@@ -25,6 +26,9 @@ import { formatDate } from '../dateFormat'
  *
  * Phase 13 - adds the ATS Compatibility section below the existing
  * skill columns; doesn't read or affect matched/missing/underemphasized.
+ *
+ * Phase 14 - adds the Skill Evidence section below ATS Compatibility;
+ * doesn't read or affect anything above it either.
  */
 export default function GapReportScreen({ report, onStartOver }) {
   const matchedCount = report.matched.length
@@ -119,6 +123,8 @@ export default function GapReportScreen({ report, onStartOver }) {
       </div>
 
       <AtsSection atsScore={report.atsScore} atsIssues={report.atsIssues} />
+
+      <SkillEvidenceSection skillEvidence={report.skillEvidence} />
 
       <div className="flex flex-col items-end gap-2">
         <button
