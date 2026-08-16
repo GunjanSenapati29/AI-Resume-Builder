@@ -274,8 +274,39 @@ compatibility, no console errors).**
 **Phase 15 (Skill Gap Priority Classification) complete, committed as
 b86e794, verified live in-browser (cross-report recurrence scoring,
 priority badges scoped only to missing skills, light/dark theme,
-old-report compatibility, no console errors).** Phase 16 next = Job
-Readiness Score.
+old-report compatibility, no console errors).**
+
+**Phase 16 (Job Readiness Score) complete, committed as 8801888.**
+Combines four signals already produced by earlier phases into one
+composite 0-100 score via `JobReadinessService`, without changing any of
+their underlying logic:
+
+- Skill Match Score (40%) - the existing overall match percentage,
+  reused as-is.
+- ATS Compatibility Score (20%) - Phase 13's score, reused as-is.
+- Evidence Strength Score (20%) - the average, over every matched skill,
+  of its Phase 14 evidence level mapped to STRONG=100/MODERATE=67/
+  WEAK=33/NO_EVIDENCE=0. A report with no matched skills scores 0 here
+  rather than being skipped.
+- Gap Severity Score (20%) - starts at 100, subtracts per missing skill
+  by its Phase 15 priority tier (CRITICAL -30, IMPORTANT -15, OPTIONAL
+  -5), floored at 0.
+
+Final score = round(weighted sum); label bands 85-100 Excellent, 70-84
+Strong, 50-69 Needs Work, 0-49 Not Ready. The four component scores are
+persisted on `GapReport` (not just computed transiently) alongside the
+final score/label, so a re-viewed report always shows the exact same
+breakdown - same DB-level-default pattern as `ats_score` for reports
+created before this phase existed (they read back 0/Not Ready rather
+than erroring).
+
+Verified by hand-checking the weighted math against a real match run
+through the live backend (0.40×80 + 0.20×25 + 0.20×41.5 + 0.20×95 = 64.3
+→ 64, Needs Work) and confirming `GET /api/reports/{id}` returns an
+identical breakdown to the freshly-created report. Verified live
+in-browser (score panel renders correctly in light/dark theme, all four
+component rows visible with correct color-coded bars, no console
+errors).
 
 ## Feature Roadmap (Phase 13-27)
 
