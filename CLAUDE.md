@@ -308,53 +308,32 @@ in-browser (score panel renders correctly in light/dark theme, all four
 component rows visible with correct color-coded bars, no console
 errors).
 
-**Phase 17 (Learning Roadmap) complete, committed as 72ca46a.** Turns
-the missing/underemphasized skills from the user's MOST RECENT GapReport
-into a step-by-step study plan and activates the "Skill Roadmap" sidebar
-item, which had been a disabled "Soon" placeholder since Phase 12.
+Added a "Future PDF Redesign Reference (build only after all phases
+complete)" section with the visual reference image and locked-in
+decisions for the eventual Gap Report PDF redesign — not to be built
+until Phases 13-27 are all done.
 
-Step 1 surfaced two mismatches with the original spec, resolved before
-writing code:
-- There was no existing routing pattern to mirror - "Analyze Resume" had
-  no `onClick` at all (this app has no router, just local state in
-  `App.jsx`), so this phase built the first real Sidebar-driven page
-  switch (`page` state in `App.jsx`; both Sidebar buttons now get real
-  `onClick`/`aria-current`), not just a wire-up of an existing pattern.
-- Phase 15's `SkillGapPriority` only has rows for MISSING skills, not
-  underemphasized ones. Resolved by showing the Critical/Important/
-  Optional tier badge only on missing-skill cards (which also sets the
-  Critical -> Optional sort order); underemphasized skills list after
-  with no tier badge.
+**Phase 18 (Project Recommendations) complete, committed as b1f3c9d.**
+Enriches Phase 17's Skill Roadmap by replacing the generic step 2
+("Practice with a small project using X") with a concrete, curated
+project idea, for a fixed list of 11 skills — not a new page or sidebar
+item.
 
-Content rule (the guardrail for this phase): every missing/
-underemphasized skill gets the exact same fixed 4-step template with
-only the skill name substituted in - no invented course names, tutorial
-titles, or URLs. The one exception is a fixed 9-skill list (Java,
-JavaScript, Python, React, Spring Boot, MySQL, Git, Docker, AWS) that
-also gets a link to that skill's real, stable, official documentation
-homepage; any other skill gets the 4 steps with no link.
+Same architecture and content guardrail as Phase 17's `OFFICIAL_DOCS`:
+a second static lookup table (`PROJECT_IDEAS`, skill name -> one
+plain-text project idea) inside `LearningRoadmapService`, computed live
+alongside the rest of the roadmap — no new DB table, no invented tools/
+libraries beyond the skill itself and things everyone already has (a
+database, the command line). Any skill not in the list keeps the
+original generic step 2 text unchanged, so this only ever adds
+specificity, never removes coverage.
 
-`LearningRoadmapService` (new `roadmap` package) computes this live on
-every page load straight from already-persisted data (the latest
-`GapReport`'s missing/underemphasized JSON plus Phase 15's
-`SkillGapPriority` rows) - a static template + fixed lookup table, not a
-scored value, so nothing new is persisted. `GET /api/reports/latest/
-learning-roadmap` returns 204 (not 404) when the user has no reports
-yet, since that's a normal empty state, not an error - the frontend
-shows "Analyze a resume first..." with a button back to Analyze Resume,
-not a broken or blank page. Doesn't modify any Phase 13-16 logic.
-
-Verified via live API calls (204 for a zero-report user; a mixed-tier
-report returning missing skills correctly sorted Important before
-Optional, each with the exact 4-step template; a skill outside the
-9-skill list correctly getting `officialDocUrl: null`; an
-underemphasized skill correctly getting `priorityTier: null` but still
-its doc link where applicable; the roadmap correctly scoped to only the
-most recent of two reports) and live in-browser (Sidebar's Skill Roadmap
-item activates/highlights correctly in both collapsed/expanded and
-light/dark, two-way navigation with Analyze Resume works, a real
-report's roadmap and the zero-report empty state both render correctly,
-no console errors).
+Verified via live API calls: a report with Docker (in the curated list)
+missing showed its specific project idea in step 2; the same report's
+Spring Security (not in the list) kept the exact original generic
+phrasing; a curated skill (Java) appearing in the underemphasized list
+also got its curated idea, confirming the swap applies through the same
+`buildSteps` path regardless of missing vs. underemphasized.
 
 ## Feature Roadmap (Phase 13-27)
 
@@ -475,3 +454,21 @@ Completed, In Progress, Pending.
 - Every result shows *why*, not just *that*
 - Visible feedback for every user action
 - I can explain, in my own words, why it looks and works this way
+
+## Future PDF Redesign Reference (build only after all phases complete)
+
+Do NOT build this yet. Once Phases 13-27 are all complete, use
+docs/pdf-redesign-reference/gap-report-pdf-redesign-reference.png as the visual
+reference for the final Gap Report PDF redesign.
+
+Decisions already locked in for that future work:
+- WORDING: The reference image uses "AI-powered analysis" and "AI Recommendations."
+  This app is 100% rule-based, not AI — remove all "AI" language when implementing.
+  Use accurate wording instead, e.g. "Skill Match Analysis" and "Recommendations."
+- SCOPE: The reference includes both new visual style (progress ring, stat cards,
+  icon-tagged skill cards) AND new content (per-skill recommendation text, a
+  priority badge, a 4-step workflow). Build both together at that point, not as a
+  partial style-only pass.
+- TARGET: PDF export only. Any buttons/arrows in the reference image are static,
+  non-clickable visual elements in the PDF — this reference is not for the
+  on-screen web Gap Report screen.
