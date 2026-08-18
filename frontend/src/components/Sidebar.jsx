@@ -4,10 +4,6 @@ const PLANNED_NAV = [
     icon: <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />,
   },
   {
-    label: 'Interview Prep',
-    icon: <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />,
-  },
-  {
     label: 'Progress',
     icon: <path d="M18 20V10M12 20V4M6 20v-6" />,
   },
@@ -57,9 +53,10 @@ function initials(name) {
 // Phase 17: the real (non-"Soon") nav items - Analyze Resume and Skill
 // Roadmap now both drive App.jsx's `page` state via `onNavigate`, so
 // both need active-state styling instead of Analyze Resume's old
-// always-on hardcoded style. The rest of PLANNED_NAV below stays
-// disabled, so the shape of the eventual product is still visible
-// without pretending those pages exist yet.
+// always-on hardcoded style. Phase 19 adds Interview Prep as a third
+// real page the same way. The rest of PLANNED_NAV below stays disabled,
+// so the shape of the eventual product is still visible without
+// pretending those pages exist yet.
 function NavButton({ active, collapsed, label, icon, onClick }) {
   return (
     <li>
@@ -84,11 +81,12 @@ function NavButton({ active, collapsed, label, icon, onClick }) {
 /**
  * Phase 12: primary app navigation, replacing the old header pill nav.
  * Phase 17: Analyze Resume and Skill Roadmap are both wired to real
- * pages now (see NavButton above) - the rest of the planned nav is still
- * visually present but disabled ("Soon"), so the shape of the eventual
- * product is visible without pretending those pages exist yet. Collapses
- * to icon-only via the `collapsed` prop, which AppShell owns and
- * TopBar's toggle button flips.
+ * pages now (see NavButton above). Phase 19: Interview Prep joins them
+ * as a third real page. The rest of the planned nav is still visually
+ * present but disabled ("Soon"), so the shape of the eventual product is
+ * visible without pretending those pages exist yet. Collapses to
+ * icon-only via the `collapsed` prop, which AppShell owns and TopBar's
+ * toggle button flips.
  */
 export default function Sidebar({ collapsed, user, onLogout, activePage, onNavigate }) {
   return (
@@ -124,6 +122,18 @@ export default function Sidebar({ collapsed, user, onLogout, activePage, onNavig
               </NavIcon>
             }
             onClick={() => onNavigate('roadmap')}
+          />
+
+          <NavButton
+            active={activePage === 'interview'}
+            collapsed={collapsed}
+            label="Interview Prep"
+            icon={
+              <NavIcon>
+                <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </NavIcon>
+            }
+            onClick={() => onNavigate('interview')}
           />
 
           {PLANNED_NAV.map((item) => (

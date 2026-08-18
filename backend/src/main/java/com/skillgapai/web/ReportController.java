@@ -2,8 +2,10 @@ package com.skillgapai.web;
 
 import com.skillgapai.dto.GapReportSummary;
 import com.skillgapai.dto.GapReportView;
+import com.skillgapai.dto.InterviewQuestionsView;
 import com.skillgapai.dto.LearningRoadmapView;
 import com.skillgapai.export.GapReportPdfService;
+import com.skillgapai.interview.InterviewQuestionService;
 import com.skillgapai.roadmap.LearningRoadmapService;
 import com.skillgapai.service.ReportService;
 import org.springframework.http.ContentDisposition;
@@ -40,6 +42,10 @@ import java.util.Optional;
  * the user has no analyzed reports yet, since "no reports" isn't an
  * error - the frontend renders a normal empty state for it, same as
  * HistoryScreen does for an empty report list.
+ *
+ * Phase 19: GET /api/reports/latest/interview-questions - same 204
+ * pattern, but built from the same latest report's MATCHED skills
+ * instead of missing/underemphasized.
  */
 @RestController
 @RequestMapping("/api/reports")
@@ -48,12 +54,15 @@ public class ReportController {
     private final ReportService reportService;
     private final GapReportPdfService pdfService;
     private final LearningRoadmapService learningRoadmapService;
+    private final InterviewQuestionService interviewQuestionService;
 
     public ReportController(ReportService reportService, GapReportPdfService pdfService,
-                             LearningRoadmapService learningRoadmapService) {
+                             LearningRoadmapService learningRoadmapService,
+                             InterviewQuestionService interviewQuestionService) {
         this.reportService = reportService;
         this.pdfService = pdfService;
         this.learningRoadmapService = learningRoadmapService;
+        this.interviewQuestionService = interviewQuestionService;
     }
 
     @GetMapping
@@ -88,6 +97,13 @@ public class ReportController {
     @GetMapping("/latest/learning-roadmap")
     public ResponseEntity<LearningRoadmapView> getLatestLearningRoadmap() {
         return learningRoadmapService.buildForLatestReport(currentUserEmail())
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
+    @GetMapping("/latest/interview-questions")
+    public ResponseEntity<InterviewQuestionsView> getLatestInterviewQuestions() {
+        return interviewQuestionService.buildForLatestReport(currentUserEmail())
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.noContent().build());
     }

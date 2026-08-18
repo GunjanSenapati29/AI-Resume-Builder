@@ -138,6 +138,17 @@ export async function fetchLearningRoadmap() {
   return response.json()
 }
 
+// Phase 19: interview questions for the matched skills on the user's
+// most recent report. Same 204-means-null empty-state convention as
+// fetchLearningRoadmap above.
+export async function fetchInterviewQuestions() {
+  const response = await protectedFetch('/api/reports/latest/interview-questions')
+  if (response.status === 204) {
+    return null
+  }
+  return response.json()
+}
+
 // Phase 9: the PDF export. Can't just be a plain <a href> link since the
 // route needs the Authorization header like every other protected
 // route - so this fetches it as a blob and the caller turns that into a

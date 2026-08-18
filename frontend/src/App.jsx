@@ -8,6 +8,7 @@ import AuthScreen from './components/AuthScreen'
 import LandingScreen from './components/LandingScreen'
 import AppShell from './components/AppShell'
 import SkillRoadmapScreen from './components/SkillRoadmapScreen'
+import InterviewPrepScreen from './components/InterviewPrepScreen'
 import { submitMatch, getToken, setToken, clearToken, onUnauthorized } from './api'
 
 // A local POST /api/match usually finishes in well under this time.
@@ -33,7 +34,7 @@ export default function App() {
   // will 401 and onUnauthorized clears the rest.
   const [user, setUser] = useState(() => (getToken() ? loadStoredUser() : null))
   const [preAuthScreen, setPreAuthScreen] = useState('landing') // 'landing' | 'auth'
-  const [page, setPage] = useState('analyze') // 'analyze' | 'roadmap' - Sidebar-driven top-level page
+  const [page, setPage] = useState('analyze') // 'analyze' | 'roadmap' | 'interview' - Sidebar-driven top-level page
   const [view, setView] = useState('compare') // 'compare' | 'history'
   const [resumeText, setResumeText] = useState('')
   const [jdText, setJdText] = useState('')
@@ -126,6 +127,8 @@ export default function App() {
   return (
     <AppShell user={user} onLogout={handleLogout} activePage={page} onNavigate={setPage}>
       {page === 'roadmap' && <SkillRoadmapScreen onGoToAnalyze={() => setPage('analyze')} />}
+
+      {page === 'interview' && <InterviewPrepScreen onGoToAnalyze={() => setPage('analyze')} />}
 
       {page === 'analyze' && (
         <>
