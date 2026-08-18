@@ -32,6 +32,11 @@ import java.util.stream.Collectors;
  * per-skill variation is the skill name itself and, for the fixed list
  * of skills in OFFICIAL_DOCS, a link to that skill's real, stable,
  * official documentation homepage.
+ *
+ * Phase 18: for the fixed list of skills in PROJECT_IDEAS, step 2 of the
+ * 4-step template is replaced with a concrete, curated project idea
+ * instead of the generic "practice with a small project" phrasing. Any
+ * skill not in that list keeps the original generic step 2 unchanged.
  */
 @Service
 public class LearningRoadmapService {
@@ -48,6 +53,21 @@ public class LearningRoadmapService {
             Map.entry("git", "https://git-scm.com/doc"),
             Map.entry("docker", "https://docs.docker.com"),
             Map.entry("aws", "https://docs.aws.amazon.com"));
+
+    // A concrete project idea for step 2, for the fixed list of skills
+    // below. Any skill not listed here keeps the generic step 2 text.
+    private static final Map<String, String> PROJECT_IDEAS = Map.ofEntries(
+            Map.entry("java", "Build a command-line library management system using core Java, collections, and file I/O to persist data."),
+            Map.entry("spring boot", "Build a small REST API (e.g. a personal expense tracker) with Spring Boot, exposing CRUD endpoints backed by a database."),
+            Map.entry("javascript", "Build an interactive to-do list or quiz app using vanilla JavaScript, DOM manipulation, and local state."),
+            Map.entry("python", "Build a command-line tool that automates a repetitive task (e.g. renaming files, parsing a CSV) using Python's standard library."),
+            Map.entry("react", "Build a small multi-page app (e.g. a movie search app using a public API) using React components, state, and routing."),
+            Map.entry("mysql", "Design a relational database schema for a real-world scenario (e.g. a bookstore) and write queries covering joins, aggregates, and subqueries."),
+            Map.entry("git", "Practice a full branching workflow on one of your existing projects - create feature branches, open pull requests, and resolve a merge conflict."),
+            Map.entry("docker", "Containerize one of your existing projects with a Dockerfile, and use docker-compose to run it alongside a database."),
+            Map.entry("aws", "Deploy a small project to AWS (e.g. host a static site on S3, or run a simple app on an EC2 instance) and document the steps."),
+            Map.entry("rest apis", "Design and build a simple REST API for a small domain (e.g. a notes app), following proper HTTP methods and status codes."),
+            Map.entry("junit", "Add unit tests to one of your existing projects using JUnit, covering both normal and edge-case inputs."));
 
     private final GapReportRepository gapReportRepository;
     private final SkillGapPriorityRepository skillGapPriorityRepository;
@@ -96,9 +116,14 @@ public class LearningRoadmapService {
     private List<String> buildSteps(String skillName) {
         return List.of(
                 "Learn the fundamentals of " + skillName,
-                "Practice with a small project using " + skillName,
+                projectIdeaStep(skillName),
                 "Add " + skillName + " to your resume with real evidence (a project, a bullet point)",
                 "Re-run SkillGap AI to confirm it's now detected");
+    }
+
+    private String projectIdeaStep(String skillName) {
+        String projectIdea = PROJECT_IDEAS.get(skillName.toLowerCase());
+        return projectIdea != null ? projectIdea : "Practice with a small project using " + skillName;
     }
 
     private String officialDocUrl(String skillName) {
