@@ -5,6 +5,7 @@ import com.skillgapai.dto.AtsIssueView;
 import com.skillgapai.dto.GapReportSummary;
 import com.skillgapai.dto.GapReportView;
 import com.skillgapai.dto.JobReadinessView;
+import com.skillgapai.dto.ReportComparisonItemView;
 import com.skillgapai.dto.SkillEvidenceView;
 import com.skillgapai.dto.SkillGapPriorityView;
 import com.skillgapai.entity.AtsIssue;
@@ -36,6 +37,8 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -76,6 +79,10 @@ import java.util.Optional;
 public class ReportService {
 
     private static final int JD_SNIPPET_LENGTH = 80;
+    // Phase 21: the Compare Jobs page shows several reports side by side,
+    // so each one's label needs to be shorter than the History table's
+    // single-column snippet above.
+    private static final int COMPARE_LABEL_LENGTH = 60;
 
     private final SkillMatchingService matchingService;
     private final AtsAnalyzerService atsAnalyzerService;
@@ -216,18 +223,60 @@ public class ReportService {
         return gapReportRepository.findByResume_User_EmailOrderByCreatedAtDesc(userEmail).stream()
                 .map(report -> new GapReportSummary(
                         report.getId(),
-                        snippet(report.getJdText()),
+                        snippet(report.getJdText(), JD_SNIPPET_LENGTH),
                         report.getMatchPercentage(),
                         report.getCreatedAt()))
                 .toList();
     }
 
-    private String snippet(String text) {
+    /**
+     * Phase 21: resolves every requested report id for one Compare Jobs
+     * call, same ownership scoping as getReport - if ANY id doesn't
+     * resolve (missing, or belongs to another user), the whole request
+     * comes back empty rather than revealing which id failed, so this
+     * never confirms or denies that a given report id belongs to someone
+     * else's account. Sorted by match percentage descending so the best
+     * fit is always first.
+     */
+    @Transactional(readOnly = true)
+    public Optional<List<ReportComparisonItemView>> compareReports(List<Long> ids, String userEmail) {
+        List<ReportComparisonItemView> items = new ArrayList<>();
+        for (Long id : ids) {
+            Optional<GapReport> report = gapReportRepository.findById(id)
+                    .filter(r -> r.getResume().getUser().getEmail().equals(userEmail));
+            if (report.isEmpty()) {
+                return Optional.empty();
+            }
+            items.add(toComparisonItem(report.get()));
+        }
+        items.sort(Comparator.comparingDouble(ReportComparisonItemView::matchPercentage).reversed());
+        return Optional.of(items);
+    }
+
+    private ReportComparisonItemView toComparisonItem(GapReport report) {
+        return new ReportComparisonItemView(
+                report.getId(),
+                snippet(report.getJdText(), COMPARE_LABEL_LENGTH),
+                report.getCreatedAt(),
+                report.getMatchPercentage(),
+                skillNames(report.getMatchedSkillsJson()),
+                skillNames(report.getMissingSkillsJson()));
+    }
+
+    private List<String> skillNames(String json) {
+        List<String> names = new ArrayList<>();
+        for (JsonNode item : readJson(json)) {
+            names.add(item.path("skillName").asText(""));
+        }
+        return names;
+    }
+
+    private String snippet(String text, int length) {
         String trimmed = text.strip();
-        if (trimmed.length() <= JD_SNIPPET_LENGTH) {
+        if (trimmed.length() <= length) {
             return trimmed;
         }
-        return trimmed.substring(0, JD_SNIPPET_LENGTH).stripTrailing() + "...";
+        return trimmed.substring(0, length).stripTrailing() + "...";
     }
 
     private GapReportView toView(GapReport report) {

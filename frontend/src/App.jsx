@@ -10,6 +10,7 @@ import AppShell from './components/AppShell'
 import SkillRoadmapScreen from './components/SkillRoadmapScreen'
 import InterviewPrepScreen from './components/InterviewPrepScreen'
 import CareerFitScreen from './components/CareerFitScreen'
+import CompareJobsScreen from './components/CompareJobsScreen'
 import { submitMatch, getToken, setToken, clearToken, onUnauthorized } from './api'
 
 // A local POST /api/match usually finishes in well under this time.
@@ -35,8 +36,9 @@ export default function App() {
   // will 401 and onUnauthorized clears the rest.
   const [user, setUser] = useState(() => (getToken() ? loadStoredUser() : null))
   const [preAuthScreen, setPreAuthScreen] = useState('landing') // 'landing' | 'auth'
-  const [page, setPage] = useState('analyze') // 'analyze' | 'roadmap' | 'interview' | 'career' - Sidebar-driven top-level page
+  const [page, setPage] = useState('analyze') // 'analyze' | 'roadmap' | 'interview' | 'career' | 'compareJobs' - Sidebar-driven top-level page
   const [view, setView] = useState('compare') // 'compare' | 'history'
+  const [compareReportIds, setCompareReportIds] = useState([])
   const [resumeText, setResumeText] = useState('')
   const [jdText, setJdText] = useState('')
   const [selectedSkills, setSelectedSkills] = useState({})
@@ -66,6 +68,17 @@ export default function App() {
     setView('compare')
     setStage('form')
     setReport(null)
+    setCompareReportIds([])
+  }
+
+  function handleCompareSelected(ids) {
+    setCompareReportIds(ids)
+    setPage('compareJobs')
+  }
+
+  function handleGoToHistory() {
+    setPage('analyze')
+    setView('history')
   }
 
   async function handleSubmit(event) {
@@ -133,6 +146,10 @@ export default function App() {
 
       {page === 'career' && <CareerFitScreen onGoToAnalyze={() => setPage('analyze')} />}
 
+      {page === 'compareJobs' && (
+        <CompareJobsScreen reportIds={compareReportIds} onGoToHistory={handleGoToHistory} />
+      )}
+
       {page === 'analyze' && (
         <>
           <div>
@@ -163,7 +180,7 @@ export default function App() {
             </button>
           </div>
 
-          {view === 'history' && <HistoryScreen />}
+          {view === 'history' && <HistoryScreen onCompare={handleCompareSelected} />}
 
           {view === 'compare' && stage === 'form' && (
             <form onSubmit={handleSubmit} className="space-y-5">

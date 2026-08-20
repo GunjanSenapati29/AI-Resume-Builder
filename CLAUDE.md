@@ -397,6 +397,61 @@ Career Fit renders the real ranked roles with correct matched/missing
 chips and score-bar colors, in both dark and light theme, with no
 browser console errors.
 
+**Phase 21 (Multi-Job/Multi-JD Comparison) complete.** Lets the user
+pick 2-5 of their own past GapReports from History and see them ranked
+side by side by match %, with matched/missing skills per report and
+which matched skills are common across the whole set vs. unique to one
+job - "which job am I better suited for and why," not just a bare
+number. Option A from the design discussion: reuses data every
+GapReport already stores, no new submission flow and no new scoring
+logic anywhere in this phase.
+
+Backend: `dto/ReportComparisonItemView.java`,
+`GET /api/reports/compare?ids=1,2,3` on `ReportController`. Validates
+2-5 ids (400 otherwise, including a malformed ids param) and reuses
+`ReportService`'s existing per-report ownership check for every id - if
+ANY id doesn't resolve to one of the logged-in user's own reports, the
+whole request 404s rather than revealing which id failed, same
+never-confirm-or-deny reasoning `getReport` already uses. Response is
+sorted by match percentage descending regardless of the order ids were
+requested in. `ReportService.compareReports` is the only new backend
+logic; everything it returns (label, matchedSkills, missingSkills,
+matchPercentage) is a reshaping of columns already on `GapReport`.
+
+Frontend: `HistoryScreen.jsx` grows an optional checkbox column (only
+when an `onCompare` prop is passed) capped at 5 selections, with a
+live "X of 5 selected" count and a "Compare Selected" button once 2+
+are checked. `components/CompareJobsScreen.jsx` renders the ranked
+cards - the top-scoring report gets a "Best Fit" badge and accent
+border, each report shows a match-% bar (reusing `matchSeverity`'s
+existing 70/40 thresholds, same ones `MatchMeter`/`HistoryScreen`
+already use) plus matched skills (tagged "All" if every compared report
+matched that skill, "Unique" if only this one did) and missing skills.
+That All/Unique tagging is the one piece of client-side computation in
+this phase (`countMatchesAcrossReports` in `CompareJobsScreen.jsx`) -
+everything else is a direct render of what the backend returned.
+`fetchReportComparison()` added to `api.js`. "Compare Jobs" activated
+in `Sidebar.jsx` (moved out of the disabled `PLANNED_NAV` list) and
+wired into `App.jsx` as a `compareJobs` page the same way every other
+real nav item is; reached directly from the sidebar with nothing
+selected yet, it shows an instructional empty state with a "Go to
+History" CTA instead of attempting a request the backend would 400 on.
+
+Verified for real: `mvn compile`/`mvn test` and `npm run build` all
+clean. Live backend testing covered every edge the design called for -
+2 reports (200), 5 reports (200), 1 report (400), 6 reports (400), a
+malformed ids param (400), and a request mixing one of the logged-in
+user's own report ids with another user's report id (404) - plus a
+targeted check that two reports submitted as `low,high` still came back
+sorted `high,low`, proving the sort isn't just an artifact of insertion
+order. Live in-browser: the sidebar's direct-entry empty state, the
+History checkbox flow (selecting up to 5, confirming the 6th checkbox
+is actually disabled, not just visually capped), and the real
+comparison view (3 reports at 100%/67%/25%, "Best Fit" on the top card,
+Java correctly tagged "All" since every report matched it, MySQL
+correctly tagged "Unique" since only the 100% report did) - all
+confirmed in both light and dark theme, no browser console errors.
+
 ## Feature Roadmap (Phase 13-27)
 
 - **Phase 13 - ATS Compatibility Analyzer**: rule-based checks for

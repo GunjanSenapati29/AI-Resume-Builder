@@ -4,6 +4,8 @@ import { matchSeverity } from '../matchSeverity'
 import { formatDate } from '../dateFormat'
 import GapReportScreen from './GapReportScreen'
 
+const MAX_COMPARE = 5
+
 // Same 70/40 thresholds as matchSeverity(), extended to a third (low)
 // tier the sample data used while building this never needed to show,
 // since it happened to only include high/mid scores.
@@ -13,9 +15,21 @@ function badgeClasses(percentage) {
   return 'text-critical'
 }
 
-function ReportRow({ summary, onSelect }) {
+function ReportRow({ summary, onSelect, compareEnabled, checked, checkDisabled, onToggleCompare }) {
   return (
     <tr className="transition-colors hover:bg-surface-hover">
+      {compareEnabled && (
+        <td className="border-b border-border px-4 py-4">
+          <input
+            type="checkbox"
+            checked={checked}
+            disabled={checkDisabled}
+            onChange={() => onToggleCompare(summary.id)}
+            aria-label={`Select report from ${formatDate(summary.createdAt)} for comparison`}
+            className="h-4 w-4 rounded-sm border-border-strong text-accent focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-40"
+          />
+        </td>
+      )}
       <td className="border-b border-border px-4 py-4 text-text-primary">
         <span className="block max-w-xs truncate sm:max-w-sm">{summary.jdSnippet}</span>
       </td>
@@ -53,8 +67,13 @@ function ReportRow({ summary, onSelect }) {
  *
  * Phase 12: now reached via the "History" tab inside the Analyze
  * Resume page (was its own top-level nav item pre-shell).
+ *
+ * Phase 21: an optional `onCompare` prop turns on a checkbox column so
+ * the user can pick 2-5 past reports and jump to the Compare Jobs page
+ * with their ids - selection is local UI state here, the actual
+ * comparison data comes from GET /api/reports/compare on that page.
  */
-export default function HistoryScreen() {
+export default function HistoryScreen({ onCompare }) {
   const [summaries, setSummaries] = useState([])
   const [listLoading, setListLoading] = useState(true)
   const [listError, setListError] = useState('')
@@ -64,12 +83,21 @@ export default function HistoryScreen() {
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailError, setDetailError] = useState('')
 
+  const [compareIds, setCompareIds] = useState([])
+  const compareEnabled = Boolean(onCompare)
+
   useEffect(() => {
     fetchReportHistory()
       .then(setSummaries)
       .catch((error) => setListError(error.message))
       .finally(() => setListLoading(false))
   }, [])
+
+  function handleToggleCompare(id) {
+    setCompareIds((current) =>
+      current.includes(id) ? current.filter((existing) => existing !== id) : [...current, id],
+    )
+  }
 
   async function handleSelect(id) {
     setSelectedId(id)
@@ -116,9 +144,31 @@ export default function HistoryScreen() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h2 className="text-xl font-bold text-text-primary">History</h2>
-        <p className="mt-0.5 text-sm text-text-muted">Every comparison you've run, saved automatically</p>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-bold text-text-primary">History</h2>
+          <p className="mt-0.5 text-sm text-text-muted">
+            {compareEnabled
+              ? `Every comparison you've run, saved automatically - tick 2 to ${MAX_COMPARE} to compare them side by side`
+              : "Every comparison you've run, saved automatically"}
+          </p>
+        </div>
+        {compareEnabled && compareIds.length > 0 && (
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold text-text-muted">
+              {compareIds.length} of {MAX_COMPARE} selected
+            </span>
+            {compareIds.length >= 2 && (
+              <button
+                type="button"
+                onClick={() => onCompare(compareIds)}
+                className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white active:scale-[0.97]"
+              >
+                Compare Selected
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {listLoading && <p className="text-sm text-text-muted">Loading history...</p>}
@@ -141,6 +191,7 @@ export default function HistoryScreen() {
             <table className="w-full border-collapse text-left text-sm">
               <thead>
                 <tr>
+                  {compareEnabled && <th className="border-b border-border px-4 py-3.5" />}
                   <th className="border-b border-border px-4 py-3.5 text-xs font-bold uppercase tracking-wide text-text-muted">
                     Job description
                   </th>
@@ -155,7 +206,15 @@ export default function HistoryScreen() {
               </thead>
               <tbody>
                 {summaries.map((summary) => (
-                  <ReportRow key={summary.id} summary={summary} onSelect={handleSelect} />
+                  <ReportRow
+                    key={summary.id}
+                    summary={summary}
+                    onSelect={handleSelect}
+                    compareEnabled={compareEnabled}
+                    checked={compareIds.includes(summary.id)}
+                    checkDisabled={compareIds.length >= MAX_COMPARE && !compareIds.includes(summary.id)}
+                    onToggleCompare={handleToggleCompare}
+                  />
                 ))}
               </tbody>
             </table>

@@ -161,6 +161,15 @@ export async function fetchRoleRecommendations() {
   return response.json()
 }
 
+// Phase 21: side-by-side comparison of 2-5 of the user's own past
+// reports. No 204 case here (unlike the "latest report" endpoints
+// above) - the Compare Jobs page only ever calls this once the user has
+// picked reports from History, so there's always at least 2 ids.
+export async function fetchReportComparison(ids) {
+  const response = await protectedFetch(`/api/reports/compare?ids=${ids.join(',')}`)
+  return response.json()
+}
+
 // Phase 9: the PDF export. Can't just be a plain <a href> link since the
 // route needs the Authorization header like every other protected
 // route - so this fetches it as a blob and the caller turns that into a

@@ -18,8 +18,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -52,6 +54,11 @@ import java.util.Optional;
  * Phase 20: GET /api/reports/role-recommendations - same 204 pattern,
  * but aggregated across ALL of the user's reports rather than just the
  * latest one, so it lives outside the /latest/... group above.
+ *
+ * Phase 21: GET /api/reports/compare?ids=1,2,3 - 2 to 5 reports, side by
+ * side. 400 for a malformed/out-of-range ids param, 404 (not 403, same
+ * reasoning as getReport) if ANY id doesn't resolve to one of the
+ * logged-in user's own reports.
  */
 @RestController
 @RequestMapping("/api/reports")
@@ -122,6 +129,34 @@ public class ReportController {
         return careerRoleService.buildForAllReports(currentUserEmail())
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
+    @GetMapping("/compare")
+    public ResponseEntity<?> compareReports(@RequestParam String ids) {
+        List<Long> parsedIds;
+        try {
+            parsedIds = parseIds(ids);
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().body("ids must be a comma-separated list of report IDs.");
+        }
+        if (parsedIds.size() < 2 || parsedIds.size() > 5) {
+            return ResponseEntity.badRequest().body("Select between 2 and 5 reports to compare.");
+        }
+
+        return reportService.compareReports(parsedIds, currentUserEmail())
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    private List<Long> parseIds(String ids) {
+        List<Long> parsed = new ArrayList<>();
+        for (String part : ids.split(",")) {
+            String trimmed = part.trim();
+            if (!trimmed.isEmpty()) {
+                parsed.add(Long.parseLong(trimmed));
+            }
+        }
+        return parsed;
     }
 
     private String currentUserEmail() {
