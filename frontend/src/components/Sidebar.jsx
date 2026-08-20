@@ -53,10 +53,10 @@ function initials(name) {
 // Phase 17: the real (non-"Soon") nav items - Analyze Resume and Skill
 // Roadmap now both drive App.jsx's `page` state via `onNavigate`, so
 // both need active-state styling instead of Analyze Resume's old
-// always-on hardcoded style. Phase 19 adds Interview Prep as a third
-// real page the same way. The rest of PLANNED_NAV below stays disabled,
-// so the shape of the eventual product is still visible without
-// pretending those pages exist yet.
+// always-on hardcoded style. Phase 19 adds Interview Prep, and Phase 20
+// adds Career Fit, as further real pages the same way. The rest of
+// PLANNED_NAV below stays disabled, so the shape of the eventual product
+// is still visible without pretending those pages exist yet.
 function NavButton({ active, collapsed, label, icon, onClick }) {
   return (
     <li>
@@ -134,6 +134,20 @@ export default function Sidebar({ collapsed, user, onLogout, activePage, onNavig
               </NavIcon>
             }
             onClick={() => onNavigate('interview')}
+          />
+
+          <NavButton
+            active={activePage === 'career'}
+            collapsed={collapsed}
+            label="Career Fit"
+            icon={
+              <NavIcon>
+                <circle cx="12" cy="12" r="9" />
+                <circle cx="12" cy="12" r="5" />
+                <circle cx="12" cy="12" r="1" />
+              </NavIcon>
+            }
+            onClick={() => onNavigate('career')}
           />
 
           {PLANNED_NAV.map((item) => (

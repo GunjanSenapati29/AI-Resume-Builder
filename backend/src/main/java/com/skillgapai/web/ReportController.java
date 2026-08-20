@@ -1,9 +1,11 @@
 package com.skillgapai.web;
 
+import com.skillgapai.career.CareerRoleService;
 import com.skillgapai.dto.GapReportSummary;
 import com.skillgapai.dto.GapReportView;
 import com.skillgapai.dto.InterviewQuestionsView;
 import com.skillgapai.dto.LearningRoadmapView;
+import com.skillgapai.dto.RoleRecommendationsView;
 import com.skillgapai.export.GapReportPdfService;
 import com.skillgapai.interview.InterviewQuestionService;
 import com.skillgapai.roadmap.LearningRoadmapService;
@@ -46,6 +48,10 @@ import java.util.Optional;
  * Phase 19: GET /api/reports/latest/interview-questions - same 204
  * pattern, but built from the same latest report's MATCHED skills
  * instead of missing/underemphasized.
+ *
+ * Phase 20: GET /api/reports/role-recommendations - same 204 pattern,
+ * but aggregated across ALL of the user's reports rather than just the
+ * latest one, so it lives outside the /latest/... group above.
  */
 @RestController
 @RequestMapping("/api/reports")
@@ -55,14 +61,17 @@ public class ReportController {
     private final GapReportPdfService pdfService;
     private final LearningRoadmapService learningRoadmapService;
     private final InterviewQuestionService interviewQuestionService;
+    private final CareerRoleService careerRoleService;
 
     public ReportController(ReportService reportService, GapReportPdfService pdfService,
                              LearningRoadmapService learningRoadmapService,
-                             InterviewQuestionService interviewQuestionService) {
+                             InterviewQuestionService interviewQuestionService,
+                             CareerRoleService careerRoleService) {
         this.reportService = reportService;
         this.pdfService = pdfService;
         this.learningRoadmapService = learningRoadmapService;
         this.interviewQuestionService = interviewQuestionService;
+        this.careerRoleService = careerRoleService;
     }
 
     @GetMapping
@@ -104,6 +113,13 @@ public class ReportController {
     @GetMapping("/latest/interview-questions")
     public ResponseEntity<InterviewQuestionsView> getLatestInterviewQuestions() {
         return interviewQuestionService.buildForLatestReport(currentUserEmail())
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
+    @GetMapping("/role-recommendations")
+    public ResponseEntity<RoleRecommendationsView> getRoleRecommendations() {
+        return careerRoleService.buildForAllReports(currentUserEmail())
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.noContent().build());
     }

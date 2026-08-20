@@ -335,6 +335,68 @@ phrasing; a curated skill (Java) appearing in the underemphasized list
 also got its curated idea, confirming the swap applies through the same
 `buildSteps` path regardless of missing vs. underemphasized.
 
+**Phase 19 (Interview Question Bank) complete, committed as c281608.**
+Turns the MATCHED skills (not missing/underemphasized - that's Phase
+17's job) on the user's most recent GapReport into interview practice
+questions - `interview/InterviewQuestionService.java` has a static
+`CURATED_QUESTIONS` table (3 questions per skill, same architecture as
+Phase 17/18's lookup tables) for a fixed list of skills, and any matched
+skill outside that list gets a generic 3-question fallback with the
+skill name filled in. `GET /api/reports/latest/interview-questions`,
+same 204-means-no-reports-yet convention as Learning Roadmap. Frontend:
+`InterviewPrepScreen.jsx`, wired into the sidebar as a real nav item the
+same way Skill Roadmap was. Verified live in-browser (matched-skill
+cards render with their 3 questions each, light/dark theme, old-report
+compatibility, no console errors).
+
+**Phase 20 (Career Role Recommendation) complete.** Scores the user's
+aggregate skill profile against a fixed
+catalog of 5 role categories (Backend Developer (Java), Full Stack
+Developer, Frontend Developer, DevOps-leaning Engineer, QA / SDET) -
+each defined as a short required-skill list in a static lookup table,
+same architecture as Phase 17-19's fixed content tables, no DB table, no
+ML.
+
+The one deliberate departure from Phase 17-19: those all read only the
+user's single MOST RECENT GapReport. Career Fit reads EVERY report the
+user has ever run (`findByResume_User_EmailOrderByCreatedAtDesc`) and
+unions every skill that has ever appeared as MATCHED, on any report,
+into one set - a role fit is a question about the user's overall
+demonstrated skill set, not one specific JD comparison. Score per role =
+(required skills ever matched) / (total required) x 100, rounded,
+roles sorted by score descending. Computed live on every call, nothing
+persisted, same reasoning as Phase 17-19.
+
+Backend: `dto/RoleFitView.java`, `dto/RoleRecommendationsView.java`,
+`career/CareerRoleService.java`, `GET /api/reports/role-recommendations`
+on `ReportController` (same 204-means-no-reports-yet convention, but
+outside the `/latest/...` route group since it isn't a single-report
+view). Frontend: `components/CareerFitScreen.jsx` (loading / empty-state
+with a "Go to Analyze Resume" CTA / real ranked role list, same
+three-state pattern as `SkillRoadmapScreen`/`InterviewPrepScreen`), a
+`fetchRoleRecommendations()` in `api.js` with the same 204-returns-null
+convention, a `Career Fit` entry in `Sidebar.jsx` styled like the other
+real (non-"Soon") nav items, and a `career` page in `App.jsx`. Each role
+card shows its fit percentage as a color-coded bar (same 80/50
+good/warning/critical thresholds `JobReadinessSection` uses) plus which
+required skills are matched vs. missing, so the score is never shown
+without the reasoning behind it.
+
+Verified for real, not assumed: `mvn compile`/`mvn test` clean, `npm run
+build` clean. Ran the live backend and proved the "reads ALL reports"
+behavior specifically - two separate `/api/match` calls with disjoint
+skill sets (Java/Spring Boot/MySQL/REST APIs/JUnit in one,
+JavaScript/React/Git/Docker in the other) made "Full Stack Developer"
+(which needs skills from both) score 100%, which is only possible if
+every report is being read, not just the latest. A second test user
+with only Java+Git matched produced the hand-checked fractions exactly
+(67/33/33/25/17, correctly sorted descending). Live in-browser: signed
+up a fresh account, confirmed the empty state and its CTA render with
+zero reports, ran a real Analyze Resume submission, then confirmed
+Career Fit renders the real ranked roles with correct matched/missing
+chips and score-bar colors, in both dark and light theme, with no
+browser console errors.
+
 ## Feature Roadmap (Phase 13-27)
 
 - **Phase 13 - ATS Compatibility Analyzer**: rule-based checks for

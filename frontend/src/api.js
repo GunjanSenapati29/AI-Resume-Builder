@@ -149,6 +149,18 @@ export async function fetchInterviewQuestions() {
   return response.json()
 }
 
+// Phase 20: role fit scores aggregated across ALL of the user's
+// reports (not just the most recent one - see CareerRoleService). Same
+// 204-means-null empty-state convention as fetchLearningRoadmap/
+// fetchInterviewQuestions above.
+export async function fetchRoleRecommendations() {
+  const response = await protectedFetch('/api/reports/role-recommendations')
+  if (response.status === 204) {
+    return null
+  }
+  return response.json()
+}
+
 // Phase 9: the PDF export. Can't just be a plain <a href> link since the
 // route needs the Authorization header like every other protected
 // route - so this fetches it as a blob and the caller turns that into a
