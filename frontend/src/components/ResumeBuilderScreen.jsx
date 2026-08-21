@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
+  compareResumeVersions,
   createResumeVersion,
   deleteResumeVersion,
   duplicateResumeVersion,
@@ -9,8 +10,13 @@ import {
   updateResumeVersion,
 } from '../api'
 import { formatDate } from '../dateFormat'
+import { matchSeverity } from '../matchSeverity'
+import { GoodIcon } from './StatusIcons'
+import { STATUS_COLORS } from '../statusColors'
+import SkillsChecklist from './SkillsChecklist'
 
 const BLANK_CONTACT = { name: '', email: '', phone: '', location: '', portfolioUrl: '', githubUrl: '', linkedinUrl: '' }
+const COMPARE_COUNT = 2
 
 function blankProject() {
   return { name: '', description: '', tech: '', link: '' }
@@ -492,9 +498,31 @@ function ResumeForm({ editingId, onSaved, onCancel }) {
 
 // ---- list view ----
 
-function ResumeRow({ summary, onEdit, onDuplicate, onDelete, onDownload, confirmingDelete, rowBusy, rowError }) {
+function ResumeRow({
+  summary,
+  onEdit,
+  onDuplicate,
+  onDelete,
+  onDownload,
+  confirmingDelete,
+  rowBusy,
+  rowError,
+  checked,
+  checkDisabled,
+  onToggleCompare,
+}) {
   return (
     <tr className="transition-colors hover:bg-surface-hover">
+      <td className="border-b border-border px-4 py-4">
+        <input
+          type="checkbox"
+          checked={checked}
+          disabled={checkDisabled}
+          onChange={() => onToggleCompare(summary.id)}
+          aria-label={`Select ${summary.title} to compare for a job`}
+          className="h-4 w-4 rounded-sm border-border-strong text-accent focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-40"
+        />
+      </td>
       <td className="border-b border-border px-4 py-4 text-text-primary">
         <span className="block max-w-xs truncate font-semibold sm:max-w-sm">{summary.title}</span>
         {rowError && (
@@ -568,7 +596,7 @@ function ResumeRow({ summary, onEdit, onDuplicate, onDelete, onDownload, confirm
   )
 }
 
-function ResumeList({ onCreate, onEdit }) {
+function ResumeList({ onCreate, onEdit, onCompare }) {
   const [versions, setVersions] = useState([])
   const [loading, setLoading] = useState(true)
   const [listError, setListError] = useState('')
@@ -576,6 +604,14 @@ function ResumeList({ onCreate, onEdit }) {
   const [busyId, setBusyId] = useState(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const [rowErrors, setRowErrors] = useState({})
+
+  const [compareIds, setCompareIds] = useState([])
+
+  function handleToggleCompare(id) {
+    setCompareIds((current) =>
+      current.includes(id) ? current.filter((existing) => existing !== id) : [...current, id],
+    )
+  }
 
   function load() {
     setLoading(true)
@@ -647,15 +683,33 @@ function ResumeList({ onCreate, onEdit }) {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-text-primary">My Resumes</h1>
-          <p className="mt-0.5 text-sm text-text-muted">Build and manage your own resume versions</p>
+          <p className="mt-0.5 text-sm text-text-muted">
+            Build and manage your own resume versions - tick {COMPARE_COUNT} to compare them against a job
+          </p>
         </div>
-        <button
-          type="button"
-          onClick={onCreate}
-          className="inline-flex items-center gap-2 rounded-md bg-accent px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white active:scale-[0.97]"
-        >
-          + New Resume
-        </button>
+        <div className="flex items-center gap-3">
+          {compareIds.length > 0 && (
+            <span className="text-xs font-semibold text-text-muted">
+              {compareIds.length} of {COMPARE_COUNT} selected
+            </span>
+          )}
+          {compareIds.length === COMPARE_COUNT && (
+            <button
+              type="button"
+              onClick={() => onCompare(compareIds)}
+              className="inline-flex items-center gap-2 rounded-md border border-accent px-4 py-2.5 text-sm font-bold text-accent transition-colors hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent active:scale-[0.97]"
+            >
+              Compare for a Job
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onCreate}
+            className="inline-flex items-center gap-2 rounded-md bg-accent px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white active:scale-[0.97]"
+          >
+            + New Resume
+          </button>
+        </div>
       </div>
 
       {loading && <p className="text-sm text-text-muted">Loading your resumes...</p>}
@@ -685,6 +739,7 @@ function ResumeList({ onCreate, onEdit }) {
             <table className="w-full border-collapse text-left text-sm">
               <thead>
                 <tr>
+                  <th className="border-b border-border px-4 py-3.5" />
                   <th className="border-b border-border px-4 py-3.5 text-xs font-bold uppercase tracking-wide text-text-muted">
                     Title
                   </th>
@@ -710,6 +765,9 @@ function ResumeList({ onCreate, onEdit }) {
                     confirmingDelete={confirmDeleteId === summary.id}
                     rowBusy={busyId === summary.id}
                     rowError={rowErrors[summary.id]}
+                    checked={compareIds.includes(summary.id)}
+                    checkDisabled={compareIds.length >= COMPARE_COUNT && !compareIds.includes(summary.id)}
+                    onToggleCompare={handleToggleCompare}
                   />
                 ))}
               </tbody>
@@ -717,6 +775,204 @@ function ResumeList({ onCreate, onEdit }) {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// ---- compare-for-a-job flow ----
+
+function MinusIcon(props) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" {...props}>
+      <path d="M4 10h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function snippet(text, length) {
+  const trimmed = (text ?? '').trim()
+  return trimmed.length <= length ? trimmed : `${trimmed.slice(0, length).trimEnd()}...`
+}
+
+function ResumeCompareSetup({ resumeVersionIds, onCompared, onCancel }) {
+  const [jdText, setJdText] = useState('')
+  const [selectedSkills, setSelectedSkills] = useState({})
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleSubmit(event) {
+    event.preventDefault()
+    setError('')
+
+    if (!jdText.trim()) {
+      setError('Please paste the job description.')
+      return
+    }
+    const requiredSkills = Object.entries(selectedSkills).map(([skillName, { core }]) => ({ skillName, core }))
+    if (requiredSkills.length === 0) {
+      setError('Please tick at least one required skill.')
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const result = await compareResumeVersions({ resumeVersionIds, jdText, requiredSkills })
+      onCompared(result)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <div>
+        <h1 className="text-xl font-bold text-text-primary">Compare for a Job</h1>
+        <p className="mt-0.5 text-sm text-text-muted">
+          Paste a job description and tick its required skills to see which of your {resumeVersionIds.length}{' '}
+          selected resumes fits it best
+        </p>
+      </div>
+
+      <div className="rounded-lg border border-border bg-surface p-6">
+        <label htmlFor="compare-jd-text" className="mb-1.5 block text-sm font-bold text-text-primary">
+          Job Description
+        </label>
+        <textarea
+          id="compare-jd-text"
+          rows={10}
+          value={jdText}
+          onChange={(event) => setJdText(event.target.value)}
+          placeholder="Paste the job description here..."
+          className="w-full rounded-md border border-border bg-surface p-3.5 text-sm text-text-primary transition-[border-color,box-shadow] focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent"
+        />
+      </div>
+
+      <SkillsChecklist selectedSkills={selectedSkills} onChange={setSelectedSkills} />
+
+      <div className="flex flex-wrap items-center gap-4">
+        <button
+          type="submit"
+          disabled={submitting}
+          className="inline-flex items-center gap-2 rounded-md bg-accent px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {submitting ? 'Comparing...' : 'Compare'}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-md border border-border bg-surface px-5 py-3 text-sm font-bold text-text-primary transition-colors hover:border-accent hover:text-accent focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent"
+        >
+          Cancel
+        </button>
+        {error && (
+          <p className="text-sm font-medium text-critical" role="alert">
+            {error}
+          </p>
+        )}
+      </div>
+    </form>
+  )
+}
+
+function ResumeCompareCard({ result, isTop }) {
+  const severity = matchSeverity(result.matchPercentage)
+
+  return (
+    <li className={`rounded-lg border bg-surface p-5 ${isTop ? 'border-accent' : 'border-border'}`}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-sm font-bold text-text-primary">{result.title}</h3>
+          {isTop && (
+            <span className="flex-none rounded-full bg-accent px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-white">
+              Best Fit
+            </span>
+          )}
+        </div>
+        <div className="flex-none text-right">
+          <span className="font-mono text-lg font-bold text-text-primary">{Math.round(result.matchPercentage)}</span>
+          <span className="font-mono text-xs text-text-muted">%</span>
+        </div>
+      </div>
+
+      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-border">
+        <div
+          className="h-full rounded-full"
+          style={{ width: `${result.matchPercentage}%`, backgroundColor: severity.hex }}
+        />
+      </div>
+      <p className="mt-1 text-xs font-semibold" style={{ color: severity.hex }}>
+        {severity.label}
+      </p>
+
+      <div className="mt-4">
+        <h4 className="text-xs font-bold uppercase tracking-wide text-text-muted">
+          Matched ({result.matched.length})
+        </h4>
+        {result.matched.length === 0 ? (
+          <p className="mt-2 text-xs text-text-muted">None.</p>
+        ) : (
+          <ul className="mt-2 flex flex-wrap gap-1.5">
+            {result.matched.map((m) => (
+              <li
+                key={m.skillName}
+                className="flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-xs font-semibold text-text-primary"
+              >
+                <GoodIcon className="h-3.5 w-3.5 flex-none" style={{ color: STATUS_COLORS.good }} />
+                {m.skillName}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="mt-4">
+        <h4 className="text-xs font-bold uppercase tracking-wide text-text-muted">
+          Missing ({result.missing.length})
+        </h4>
+        {result.missing.length === 0 ? (
+          <p className="mt-2 text-xs text-text-muted">Every required skill matched.</p>
+        ) : (
+          <ul className="mt-2 flex flex-wrap gap-1.5">
+            {result.missing.map((m) => (
+              <li
+                key={m.skillName}
+                className="flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-xs font-semibold text-text-muted"
+              >
+                <MinusIcon className="h-3.5 w-3.5 flex-none text-text-muted" />
+                {m.skillName}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </li>
+  )
+}
+
+function ResumeCompareResult({ comparison, onBack }) {
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-text-primary">Compare for a Job</h1>
+          <p className="mt-0.5 text-sm text-text-muted">Compared against: {snippet(comparison.jdText, 120)}</p>
+        </div>
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-4 py-2.5 text-sm font-bold text-text-primary transition-colors hover:border-accent hover:text-accent focus:outline-none focus:ring-2 focus:ring-inset focus:ring-accent"
+        >
+          Back to My Resumes
+        </button>
+      </div>
+
+      <ul className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {comparison.results.map((result, index) => (
+          <ResumeCompareCard key={result.resumeVersionId} result={result} isTop={index === 0} />
+        ))}
+      </ul>
     </div>
   )
 }
@@ -732,11 +988,21 @@ function ResumeList({ onCreate, onEdit }) {
  * Deleting uses an inline "Delete this resume? Confirm/Cancel" row
  * state instead of a native window.confirm() - consistent with the
  * rest of the app never using browser dialogs.
+ *
+ * Phase 23: the list view's checkbox column lets the user tick exactly
+ * 2 versions and jump into "Compare for a Job" - a JD-paste + skills
+ * form (reusing SkillsChecklist, same as Analyze Resume's New Analysis
+ * form) that runs POST /api/resume-versions/compare and shows both
+ * versions ranked side by side, same visual pattern as Phase 21's
+ * Compare Jobs. Nothing here is saved as a History entry - it's an
+ * ad-hoc "what if" comparison, computed live every time.
  */
 export default function ResumeBuilderScreen() {
-  const [mode, setMode] = useState('list') // 'list' | 'form'
+  const [mode, setMode] = useState('list') // 'list' | 'form' | 'compareSetup' | 'compareResult'
   const [editingId, setEditingId] = useState(null)
   const [listKey, setListKey] = useState(0)
+  const [compareIds, setCompareIds] = useState([])
+  const [compareResult, setCompareResult] = useState(null)
 
   function handleCreate() {
     setEditingId(null)
@@ -757,6 +1023,23 @@ export default function ResumeBuilderScreen() {
     setMode('list')
   }
 
+  function handleStartCompare(ids) {
+    setCompareIds(ids)
+    setMode('compareSetup')
+  }
+
+  function handleCompared(result) {
+    setCompareResult(result)
+    setMode('compareResult')
+  }
+
+  function handleBackToList() {
+    setCompareIds([])
+    setCompareResult(null)
+    setMode('list')
+    setListKey((key) => key + 1)
+  }
+
   if (mode === 'form') {
     return (
       <div className="space-y-5">
@@ -769,5 +1052,15 @@ export default function ResumeBuilderScreen() {
     )
   }
 
-  return <ResumeList key={listKey} onCreate={handleCreate} onEdit={handleEdit} />
+  if (mode === 'compareSetup') {
+    return (
+      <ResumeCompareSetup resumeVersionIds={compareIds} onCompared={handleCompared} onCancel={handleBackToList} />
+    )
+  }
+
+  if (mode === 'compareResult' && compareResult) {
+    return <ResumeCompareResult comparison={compareResult} onBack={handleBackToList} />
+  }
+
+  return <ResumeList key={listKey} onCreate={handleCreate} onEdit={handleEdit} onCompare={handleStartCompare} />
 }

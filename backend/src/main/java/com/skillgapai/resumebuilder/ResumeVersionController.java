@@ -1,8 +1,10 @@
 package com.skillgapai.resumebuilder;
 
+import com.skillgapai.dto.ResumeVersionCompareRequest;
 import com.skillgapai.dto.ResumeVersionRequest;
 import com.skillgapai.dto.ResumeVersionSummary;
 import com.skillgapai.dto.ResumeVersionView;
+import com.skillgapai.model.RequiredSkill;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -26,17 +28,26 @@ import java.util.Optional;
  * 404-not-403 ownership pattern ReportController already uses, so a
  * request for another user's resume version never confirms or denies
  * that the id belongs to someone else's account.
+ *
+ * Phase 23: POST /compare runs the same ownership-scoped lookup for
+ * exactly 2 resume version ids, then hands off to
+ * ResumeVersionComparisonService - computed live, never persisted.
  */
 @RestController
 @RequestMapping("/api/resume-versions")
 public class ResumeVersionController {
 
+    private static final int COMPARE_COUNT = 2;
+
     private final ResumeVersionService resumeVersionService;
     private final ResumeVersionPdfService pdfService;
+    private final ResumeVersionComparisonService comparisonService;
 
-    public ResumeVersionController(ResumeVersionService resumeVersionService, ResumeVersionPdfService pdfService) {
+    public ResumeVersionController(ResumeVersionService resumeVersionService, ResumeVersionPdfService pdfService,
+                                    ResumeVersionComparisonService comparisonService) {
         this.resumeVersionService = resumeVersionService;
         this.pdfService = pdfService;
+        this.comparisonService = comparisonService;
     }
 
     @PostMapping
@@ -99,6 +110,27 @@ public class ResumeVersionController {
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         ContentDisposition.attachment().filename(filename).build().toString())
                 .body(pdf);
+    }
+
+    @PostMapping("/compare")
+    public ResponseEntity<?> compare(@RequestBody ResumeVersionCompareRequest request) {
+        if (request.resumeVersionIds() == null || request.resumeVersionIds().size() != COMPARE_COUNT) {
+            return ResponseEntity.badRequest().body("Select exactly 2 resume versions to compare.");
+        }
+        if (isBlank(request.jdText())) {
+            return ResponseEntity.badRequest().body("jdText is required.");
+        }
+        if (request.requiredSkills() == null || request.requiredSkills().isEmpty()) {
+            return ResponseEntity.badRequest().body("requiredSkills must contain at least one skill.");
+        }
+
+        List<RequiredSkill> requiredSkills = request.requiredSkills().stream()
+                .map(rs -> new RequiredSkill(rs.skillName(), rs.core()))
+                .toList();
+
+        return comparisonService.compare(request.resumeVersionIds(), currentUserEmail(), request.jdText(), requiredSkills)
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     private String validate(ResumeVersionRequest request) {

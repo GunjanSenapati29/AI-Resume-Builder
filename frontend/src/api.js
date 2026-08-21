@@ -225,3 +225,15 @@ export async function fetchResumeVersionPdf(id) {
   const response = await protectedFetch(`/api/resume-versions/${id}/pdf`)
   return response.blob()
 }
+
+// Phase 23: compares exactly 2 of the user's own resume versions against
+// one ad-hoc jdText/requiredSkills pair - computed live, never saved as
+// a History entry (unlike POST /api/match).
+export async function compareResumeVersions({ resumeVersionIds, jdText, requiredSkills }) {
+  const response = await protectedFetch('/api/resume-versions/compare', {
+    method: 'POST',
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ resumeVersionIds, jdText, requiredSkills }),
+  })
+  return response.json()
+}

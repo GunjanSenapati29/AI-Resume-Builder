@@ -520,6 +520,72 @@ Prep, Career Fit, and Compare Jobs afterward since `Sidebar.jsx` and
 `App.jsx` are shared files this phase also edited - all six still work
 exactly as before.
 
+**Phase 23 (Resume Version Comparison) complete.** Lets the user pick 2
+of their own Resume Builder versions and see how each would score
+against one ad-hoc job description - "which version of my resume should
+I send for this job," computed live and never saved as a History entry
+(unlike `POST /api/match`, which always persists a `GapReport`).
+
+The one new piece of matching-adjacent logic: `ResumeVersionService.
+flatten()` turns one version's structured JSON sections (contact,
+summary, skills, projects, education, experience, certifications) into
+plain text - name, summary, "Skills: ..." line, then each project/
+education/experience/certification entry as its own line (bullets get
+their own lines too) - by reusing `toView()`'s existing JSON parsing and
+just re-rendering it as text instead of a JSON response. That plain text
+is handed to the existing, completely unchanged `SkillMatchingService.
+analyze()` - Phase 1's matching logic doesn't know or care whether the
+text it's given came from a parsed PDF or a flattened Resume Builder
+version.
+
+Backend: `resumebuilder/FlattenedResumeVersion.java` (a small title+text
+carrier between services, not an API shape) and
+`resumebuilder/ResumeVersionComparisonService.java` (loops the exactly-2
+requested ids, flattens each via the ownership-checked
+`ResumeVersionService.flatten()`, runs `SkillMatchingService.analyze()`
+against the same `requiredSkills` for each, sorts by match percentage
+descending - same best-fit-first convention Phase 21's `compareReports`
+uses). `POST /api/resume-versions/compare` on `ResumeVersionController`
+validates exactly 2 ids (400 otherwise), non-blank `jdText` (400), and a
+non-empty `requiredSkills` (400); if either id doesn't resolve to one of
+the logged-in user's own resume versions, the whole request 404s rather
+than revealing which id failed - same never-confirm-or-deny reasoning
+every other ownership check in this codebase already uses. `jdText` is
+echoed back in the response for display context only - nothing from
+this endpoint is written to the database.
+
+Frontend: `ResumeBuilderScreen.jsx`'s list view grows a checkbox column
+(same pattern `HistoryScreen` uses for Compare Jobs, capped at exactly 2
+here instead of 2-5) with a "Compare for a Job" button once 2 are
+ticked. That opens a JD-paste + `SkillsChecklist` form (reusing the same
+component Analyze Resume's New Analysis form uses), and submitting
+renders both versions ranked side by side - "Best Fit" badge and accent
+border on the top card, a color-coded match-% bar, and matched (green
+check)/missing (gray dash) skill chips per version - the same visual
+language Phase 21's Compare Jobs already established, just comparing
+resume versions instead of past reports. "Back to My Resumes" resets
+both the selection and the result and returns to the list.
+
+Verified for real: `mvn compile`/`mvn test` and `npm run build` all
+clean. Live backend testing via curl proved the actual differentiation
+the design called for - a Java/Spring-heavy resume version and a
+JavaScript/React-heavy one, compared against a Java-focused JD, scored
+100% and 0% respectively with correct per-skill reasoning (not just a
+plausible-looking number) - plus every validation edge: 1 id (400), 3
+ids (400), missing `jdText` (400), empty `requiredSkills` (400), and a
+request mixing the logged-in user's own id with another user's id
+(404), confirmed with a second test account. Live in-browser: built a
+real second resume version by hand, selected 2 via the checkbox flow,
+ran two different real comparisons (a Java JD and a React JD) and
+watched the ranking and matched/missing chips flip correctly between
+them - including one comparison where a match came from a project's
+"tech" field rather than the Skills section, confirming flatten() picks
+up all sections, not just the obvious one - all confirmed in both light
+and dark theme, no browser console errors. Regression-checked Analyze
+Resume, History, Skill Roadmap, Interview Prep, Career Fit, Compare
+Jobs, and My Resumes afterward since this phase edited shared files
+again - all seven still work exactly as before.
+
 ## Feature Roadmap (Phase 13-27)
 
 - **Phase 13 - ATS Compatibility Analyzer**: rule-based checks for
