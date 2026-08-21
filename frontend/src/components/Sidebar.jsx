@@ -7,10 +7,6 @@ const PLANNED_NAV = [
     label: 'Progress',
     icon: <path d="M18 20V10M12 20V4M6 20v-6" />,
   },
-  {
-    label: 'My Resumes',
-    icon: <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z M14 2v6h6 M9 13h6 M9 17h6" />,
-  },
 ]
 
 function AnalyzeIcon(props) {
@@ -50,10 +46,10 @@ function initials(name) {
 // Roadmap now both drive App.jsx's `page` state via `onNavigate`, so
 // both need active-state styling instead of Analyze Resume's old
 // always-on hardcoded style. Phase 19 adds Interview Prep, Phase 20 adds
-// Career Fit, and Phase 21 adds Compare Jobs, as further real pages the
-// same way. The rest of PLANNED_NAV below stays disabled, so the shape
-// of the eventual product is still visible without pretending those
-// pages exist yet.
+// Career Fit, Phase 21 adds Compare Jobs, and Phase 22 adds My Resumes,
+// as further real pages the same way. The rest of PLANNED_NAV below
+// stays disabled, so the shape of the eventual product is still visible
+// without pretending those pages exist yet.
 function NavButton({ active, collapsed, label, icon, onClick }) {
   return (
     <li>
@@ -157,6 +153,19 @@ export default function Sidebar({ collapsed, user, onLogout, activePage, onNavig
               </NavIcon>
             }
             onClick={() => onNavigate('compareJobs')}
+          />
+
+          <NavButton
+            active={activePage === 'resumes'}
+            collapsed={collapsed}
+            label="My Resumes"
+            icon={
+              <NavIcon>
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                <path d="M14 2v6h6M9 13h6M9 17h6" />
+              </NavIcon>
+            }
+            onClick={() => onNavigate('resumes')}
           />
 
           {PLANNED_NAV.map((item) => (

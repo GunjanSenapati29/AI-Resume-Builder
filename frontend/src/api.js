@@ -178,3 +178,50 @@ export async function fetchReportPdf(id) {
   const response = await protectedFetch(`/api/reports/${id}/pdf`)
   return response.blob()
 }
+
+// Phase 22: Resume Builder CRUD. create/update send the same
+// ResumeVersionRequest shape the form builds; a 400 (missing title or
+// contact.name) surfaces through protectedFetch's existing
+// readErrorMessage handling, same as every other validated endpoint.
+export async function fetchResumeVersions() {
+  const response = await protectedFetch('/api/resume-versions')
+  return response.json()
+}
+
+export async function fetchResumeVersion(id) {
+  const response = await protectedFetch(`/api/resume-versions/${id}`)
+  return response.json()
+}
+
+export async function createResumeVersion(payload) {
+  const response = await protectedFetch('/api/resume-versions', {
+    method: 'POST',
+    headers: JSON_HEADERS,
+    body: JSON.stringify(payload),
+  })
+  return response.json()
+}
+
+export async function updateResumeVersion(id, payload) {
+  const response = await protectedFetch(`/api/resume-versions/${id}`, {
+    method: 'PUT',
+    headers: JSON_HEADERS,
+    body: JSON.stringify(payload),
+  })
+  return response.json()
+}
+
+export async function deleteResumeVersion(id) {
+  await protectedFetch(`/api/resume-versions/${id}`, { method: 'DELETE' })
+}
+
+export async function duplicateResumeVersion(id) {
+  const response = await protectedFetch(`/api/resume-versions/${id}/duplicate`, { method: 'POST' })
+  return response.json()
+}
+
+// Same blob-download pattern as fetchReportPdf above.
+export async function fetchResumeVersionPdf(id) {
+  const response = await protectedFetch(`/api/resume-versions/${id}/pdf`)
+  return response.blob()
+}

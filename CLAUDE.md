@@ -452,6 +452,74 @@ Java correctly tagged "All" since every report matched it, MySQL
 correctly tagged "Unique" since only the 100% report did) - all
 confirmed in both light and dark theme, no browser console errors.
 
+**Phase 22 (Resume Builder) complete.** A new `ResumeVersion` entity -
+separate from the existing `Resume` entity, which stays dedicated to the
+extracted-text/matching flow - lets a user build/edit multiple resume
+versions from scratch: id, title, timestamps, plus `contact_json`
+(required - at least a name) and six optional JSON-text sections
+(summary is plain text; skills/projects/education/experience/
+certifications are JSON arrays), same `@Lob`/LONGTEXT pattern GapReport
+already uses. Since this is a brand-new table (not an ALTER on rows that
+already exist), every JSON column is a plain NOT NULL - no DB-level-
+default trick needed - with the service layer always writing `"[]"` for
+an empty list rather than null.
+
+Backend: new `resumebuilder/` package -
+`ResumeVersionService` (CRUD + duplicate, same per-user ownership-check
+pattern as `ReportService`: a version that exists but belongs to another
+user is reported as 404, never 403, so a request can never confirm or
+deny that an id belongs to someone else) and `ResumeVersionPdfService`
+(one clean, single-column, ATS-friendly PDF template via PDFBox - same
+manual word-wrap/pagination `Writer` approach as `GapReportPdfService`,
+kept as its own copy since the two documents' layouts don't overlap).
+`ResumeVersionController` exposes
+`POST/GET /api/resume-versions`, `GET/PUT/DELETE /api/resume-versions/{id}`,
+`POST /api/resume-versions/{id}/duplicate`, and
+`GET /api/resume-versions/{id}/pdf`; title and `contact.name` are
+validated at the controller (400 if blank), same division of
+responsibility `AuthController`/`AuthService` already use. Every
+section but Contact is skipped entirely when empty, both in the JSON
+response and in the PDF, so a mostly-blank resume renders as a short,
+clean document instead of empty headings or stranded whitespace.
+
+Frontend: `components/ResumeBuilderScreen.jsx` - a list view (title,
+last-updated date, Edit/Duplicate/Delete/Download PDF) and a form view,
+each section (Contact, Summary, Skills, Projects, Education, Experience,
+Certifications) as its own bordered block the user can add/remove
+entries in, all optional except Contact. Skills render as removable
+chips with an Enter-to-add input; Experience entries have their own
+nested add/remove list of bullet points. Delete uses an inline "Delete
+this resume? Confirm/Cancel" row state instead of a native
+`window.confirm()`, consistent with the rest of the app never using
+browser dialogs. "My Resumes" moved out of `Sidebar.jsx`'s disabled
+`PLANNED_NAV` list (it was already anticipated there, same as Compare
+Jobs was for Phase 21) and wired into `App.jsx` as a `resumes` page the
+same way every other real nav item is.
+
+Verified for real: `mvn compile`/`mvn test` and `npm run build` both
+clean. Live backend testing via curl covered every edge the design
+called for - create with only Contact filled in (succeeds, all other
+sections come back as empty arrays), missing title / missing
+`contact.name` (400 with a clear message), a full multi-section resume
+(all seven sections round-trip exactly), duplicate (copies every field,
+appends " (Copy)" to the title), PDF generation for both the full
+resume and the Contact-only one (`pdftotext -layout` confirmed correct
+section ordering and line breaks, and confirmed the minimal PDF has no
+broken/blank sections - just the name and email), and cross-user access
+to every route (`GET`/`PUT`/`DELETE`/duplicate/PDF) all returning 404
+for another user's resume id. Live in-browser: created a full resume by
+hand through the real form (including the Skills chip-add/remove flow
+and Experience's nested bullet add/remove, verified removing one bullet
+correctly leaves its sibling intact), edited it and confirmed every
+section reloads with the exact data that was saved, duplicated it,
+downloaded and opened the real PDF (content matched what was in the
+form), and deleted the duplicate via the inline confirm row - all
+confirmed in both light and dark theme, no browser console errors.
+Regression-checked Analyze Resume, History, Skill Roadmap, Interview
+Prep, Career Fit, and Compare Jobs afterward since `Sidebar.jsx` and
+`App.jsx` are shared files this phase also edited - all six still work
+exactly as before.
+
 ## Feature Roadmap (Phase 13-27)
 
 - **Phase 13 - ATS Compatibility Analyzer**: rule-based checks for

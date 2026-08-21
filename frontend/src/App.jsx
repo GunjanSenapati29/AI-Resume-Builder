@@ -11,6 +11,7 @@ import SkillRoadmapScreen from './components/SkillRoadmapScreen'
 import InterviewPrepScreen from './components/InterviewPrepScreen'
 import CareerFitScreen from './components/CareerFitScreen'
 import CompareJobsScreen from './components/CompareJobsScreen'
+import ResumeBuilderScreen from './components/ResumeBuilderScreen'
 import { submitMatch, getToken, setToken, clearToken, onUnauthorized } from './api'
 
 // A local POST /api/match usually finishes in well under this time.
@@ -36,7 +37,7 @@ export default function App() {
   // will 401 and onUnauthorized clears the rest.
   const [user, setUser] = useState(() => (getToken() ? loadStoredUser() : null))
   const [preAuthScreen, setPreAuthScreen] = useState('landing') // 'landing' | 'auth'
-  const [page, setPage] = useState('analyze') // 'analyze' | 'roadmap' | 'interview' | 'career' | 'compareJobs' - Sidebar-driven top-level page
+  const [page, setPage] = useState('analyze') // 'analyze' | 'roadmap' | 'interview' | 'career' | 'compareJobs' | 'resumes' - Sidebar-driven top-level page
   const [view, setView] = useState('compare') // 'compare' | 'history'
   const [compareReportIds, setCompareReportIds] = useState([])
   const [resumeText, setResumeText] = useState('')
@@ -149,6 +150,8 @@ export default function App() {
       {page === 'compareJobs' && (
         <CompareJobsScreen reportIds={compareReportIds} onGoToHistory={handleGoToHistory} />
       )}
+
+      {page === 'resumes' && <ResumeBuilderScreen />}
 
       {page === 'analyze' && (
         <>
