@@ -1,14 +1,3 @@
-const PLANNED_NAV = [
-  {
-    label: 'Dashboard',
-    icon: <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />,
-  },
-  {
-    label: 'Progress',
-    icon: <path d="M18 20V10M12 20V4M6 20v-6" />,
-  },
-]
-
 function AnalyzeIcon(props) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
@@ -75,11 +64,12 @@ function NavButton({ active, collapsed, label, icon, onClick }) {
  * Phase 12: primary app navigation, replacing the old header pill nav.
  * Phase 17: Analyze Resume and Skill Roadmap are both wired to real
  * pages now (see NavButton above). Phase 19: Interview Prep joins them
- * as a third real page. The rest of the planned nav is still visually
- * present but disabled ("Soon"), so the shape of the eventual product is
- * visible without pretending those pages exist yet. Collapses to
- * icon-only via the `collapsed` prop, which AppShell owns and TopBar's
- * toggle button flips.
+ * as a third real page. Phase 24: Dashboard and Progress - the two
+ * items PLANNED_NAV had been holding a place for since Phase 12 - become
+ * real pages too. The remaining pre-Phase-24 nav items were all
+ * activated in earlier phases, so there's no disabled "Soon" section
+ * left. Collapses to icon-only via the `collapsed` prop, which AppShell
+ * owns and TopBar's toggle button flips.
  */
 export default function Sidebar({ collapsed, user, onLogout, activePage, onNavigate }) {
   return (
@@ -98,11 +88,35 @@ export default function Sidebar({ collapsed, user, onLogout, activePage, onNavig
       <nav className="flex-1 overflow-y-auto px-3 py-4" aria-label="Primary">
         <ul className="space-y-1">
           <NavButton
+            active={activePage === 'dashboard'}
+            collapsed={collapsed}
+            label="Dashboard"
+            icon={
+              <NavIcon>
+                <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </NavIcon>
+            }
+            onClick={() => onNavigate('dashboard')}
+          />
+
+          <NavButton
             active={activePage === 'analyze'}
             collapsed={collapsed}
             label="Analyze Resume"
             icon={<AnalyzeIcon className="h-[18px] w-[18px] flex-none" />}
             onClick={() => onNavigate('analyze')}
+          />
+
+          <NavButton
+            active={activePage === 'progress'}
+            collapsed={collapsed}
+            label="Progress"
+            icon={
+              <NavIcon>
+                <path d="M18 20V10M12 20V4M6 20v-6" />
+              </NavIcon>
+            }
+            onClick={() => onNavigate('progress')}
           />
 
           <NavButton
@@ -167,29 +181,6 @@ export default function Sidebar({ collapsed, user, onLogout, activePage, onNavig
             }
             onClick={() => onNavigate('resumes')}
           />
-
-          {PLANNED_NAV.map((item) => (
-            <li key={item.label}>
-              <button
-                type="button"
-                disabled
-                title={collapsed ? `${item.label} (Soon)` : undefined}
-                className={`flex w-full cursor-not-allowed items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-text-muted ${
-                  collapsed ? 'justify-center' : 'justify-between'
-                }`}
-              >
-                <span className={`flex items-center gap-3 ${collapsed ? '' : ''}`}>
-                  <NavIcon>{item.icon}</NavIcon>
-                  {!collapsed && <span>{item.label}</span>}
-                </span>
-                {!collapsed && (
-                  <span className="rounded-full border border-border-strong px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-text-muted">
-                    Soon
-                  </span>
-                )}
-              </button>
-            </li>
-          ))}
         </ul>
       </nav>
 

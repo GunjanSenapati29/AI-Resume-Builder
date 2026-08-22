@@ -226,6 +226,27 @@ export async function fetchResumeVersionPdf(id) {
   return response.blob()
 }
 
+// Phase 24: hero data for the Dashboard screen. Same 204-means-null
+// empty-state convention as fetchLearningRoadmap/fetchInterviewQuestions/
+// fetchRoleRecommendations above.
+export async function fetchDashboardSummary() {
+  const response = await protectedFetch('/api/reports/dashboard-summary')
+  if (response.status === 204) {
+    return null
+  }
+  return response.json()
+}
+
+// Phase 24: every report's Job Readiness Score, oldest to newest, for the
+// Progress trend chart. Same 204-means-null empty-state convention.
+export async function fetchProgressTrend() {
+  const response = await protectedFetch('/api/reports/progress-trend')
+  if (response.status === 204) {
+    return null
+  }
+  return response.json()
+}
+
 // Phase 23: compares exactly 2 of the user's own resume versions against
 // one ad-hoc jdText/requiredSkills pair - computed live, never saved as
 // a History entry (unlike POST /api/match).

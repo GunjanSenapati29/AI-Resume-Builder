@@ -15,4 +15,10 @@ public interface GapReportRepository extends JpaRepository<GapReport, Long> {
     // the query above rather than fetching the full list and taking the
     // first element.
     Optional<GapReport> findFirstByResume_User_EmailOrderByCreatedAtDesc(String email);
+
+    // Phase 24: Progress trend plots left-to-right, so it needs the
+    // opposite (oldest-first) order from every other report listing.
+    List<GapReport> findByResume_User_EmailOrderByCreatedAtAsc(String email);
+
+    long countByResume_User_Email(String email);
 }

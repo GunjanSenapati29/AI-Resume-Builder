@@ -1,10 +1,12 @@
 package com.skillgapai.web;
 
 import com.skillgapai.career.CareerRoleService;
+import com.skillgapai.dto.DashboardSummaryView;
 import com.skillgapai.dto.GapReportSummary;
 import com.skillgapai.dto.GapReportView;
 import com.skillgapai.dto.InterviewQuestionsView;
 import com.skillgapai.dto.LearningRoadmapView;
+import com.skillgapai.dto.ProgressPointView;
 import com.skillgapai.dto.RoleRecommendationsView;
 import com.skillgapai.export.GapReportPdfService;
 import com.skillgapai.interview.InterviewQuestionService;
@@ -59,6 +61,11 @@ import java.util.Optional;
  * side. 400 for a malformed/out-of-range ids param, 404 (not 403, same
  * reasoning as getReport) if ANY id doesn't resolve to one of the
  * logged-in user's own reports.
+ *
+ * Phase 24: GET /api/reports/dashboard-summary and
+ * /api/reports/progress-trend - read-only aggregations of data every
+ * GapReport already stores, same 204-means-no-reports-yet convention as
+ * Learning Roadmap/Interview Prep above.
  */
 @RestController
 @RequestMapping("/api/reports")
@@ -146,6 +153,20 @@ public class ReportController {
         return reportService.compareReports(parsedIds, currentUserEmail())
                 .<ResponseEntity<?>>map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/dashboard-summary")
+    public ResponseEntity<DashboardSummaryView> getDashboardSummary() {
+        return reportService.getDashboardSummary(currentUserEmail())
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
+    @GetMapping("/progress-trend")
+    public ResponseEntity<List<ProgressPointView>> getProgressTrend() {
+        return reportService.getProgressTrend(currentUserEmail())
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     private List<Long> parseIds(String ids) {

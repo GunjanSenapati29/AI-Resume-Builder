@@ -2,9 +2,11 @@ package com.skillgapai.service;
 
 import com.skillgapai.ats.AtsAnalyzerService;
 import com.skillgapai.dto.AtsIssueView;
+import com.skillgapai.dto.DashboardSummaryView;
 import com.skillgapai.dto.GapReportSummary;
 import com.skillgapai.dto.GapReportView;
 import com.skillgapai.dto.JobReadinessView;
+import com.skillgapai.dto.ProgressPointView;
 import com.skillgapai.dto.ReportComparisonItemView;
 import com.skillgapai.dto.SkillEvidenceView;
 import com.skillgapai.dto.SkillGapPriorityView;
@@ -251,6 +253,40 @@ public class ReportService {
         }
         items.sort(Comparator.comparingDouble(ReportComparisonItemView::matchPercentage).reversed());
         return Optional.of(items);
+    }
+
+    /**
+     * Phase 24: hero data for the Dashboard screen - the latest report's
+     * Job Readiness Score/label, how many reports this user has ever run,
+     * and when the latest one was. Empty when the user has zero reports,
+     * same "no reports yet isn't an error" convention as the Learning
+     * Roadmap/Interview Prep 204 responses.
+     */
+    @Transactional(readOnly = true)
+    public Optional<DashboardSummaryView> getDashboardSummary(String userEmail) {
+        long total = gapReportRepository.countByResume_User_Email(userEmail);
+        if (total == 0) {
+            return Optional.empty();
+        }
+        GapReport latest = gapReportRepository.findFirstByResume_User_EmailOrderByCreatedAtDesc(userEmail).orElseThrow();
+        return Optional.of(new DashboardSummaryView(
+                latest.getJobReadinessScore(), latest.getJobReadinessLabel(), total, latest.getCreatedAt()));
+    }
+
+    /**
+     * Phase 24: every report's Job Readiness Score, oldest to newest, for
+     * the Progress trend chart. Empty when the user has zero reports.
+     */
+    @Transactional(readOnly = true)
+    public Optional<List<ProgressPointView>> getProgressTrend(String userEmail) {
+        List<GapReport> reports = gapReportRepository.findByResume_User_EmailOrderByCreatedAtAsc(userEmail);
+        if (reports.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(reports.stream()
+                .map(report -> new ProgressPointView(
+                        report.getId(), report.getCreatedAt(), report.getJobReadinessScore(), report.getJobReadinessLabel()))
+                .toList());
     }
 
     private ReportComparisonItemView toComparisonItem(GapReport report) {

@@ -586,6 +586,66 @@ Resume, History, Skill Roadmap, Interview Prep, Career Fit, Compare
 Jobs, and My Resumes afterward since this phase edited shared files
 again - all seven still work exactly as before.
 
+**Phase 24 (Career Progress Dashboard) complete.** Activates the two
+sidebar items ("Dashboard" and "Progress") that had been sitting in
+`Sidebar.jsx`'s disabled `PLANNED_NAV` list since Phase 12 - Analyze
+Resume stays the default landing page after login; Dashboard/Progress
+are pages you navigate to. Both are pure aggregations of columns
+`GapReport` already stores (reusing `jobReadinessScore`/
+`jobReadinessLabel` from Phase 16) - no new entity, no new scoring logic.
+
+Backend: two new read-only `GapReportRepository` queries
+(`findByResume_User_EmailOrderByCreatedAtAsc` for the chronological
+trend, `countByResume_User_Email` for the total-analyses count) plus
+`ReportService.getDashboardSummary`/`getProgressTrend`, exposed as
+`GET /api/reports/dashboard-summary` and `GET /api/reports/progress-trend`
+on `ReportController` - same 204-means-no-reports-yet convention as
+Learning Roadmap/Interview Prep/Career Fit. `dashboard-summary` returns
+the latest report's Job Readiness Score/label plus the total report
+count and latest `createdAt`; `progress-trend` returns every report's
+`{reportId, createdAt, jobReadinessScore, jobReadinessLabel}` sorted
+oldest to newest (the one deliberate reversal of this codebase's usual
+newest-first convention, since this is for plotting left to right).
+
+Frontend: `DashboardScreen.jsx` (hero score + label, total-analyses and
+last-analyzed stat tiles, quick links to Analyze Resume/History) and
+`ProgressScreen.jsx` (a hand-rolled inline SVG line chart plotting Job
+Readiness Score 0-100 over time, with dashed reference lines at the
+85/70/50 score bands and a plain HTML data table below it as the
+screen-reader-friendly alternative to the chart) - no charting library
+added, staying within the existing React + Tailwind stack per the
+tech-stack constraint. Both use the same `undefined`/`null`/real-payload
+three-state loading pattern every other real page already uses. The
+chart explicitly branches on point count: 0 renders the shared empty
+state, exactly 1 renders a single centered point with no connecting
+line, 2+ renders the full polyline - each verified as its own case, not
+inferred from the multi-report path. `fetchDashboardSummary()`/
+`fetchProgressTrend()` added to `api.js` with the same 204-returns-null
+convention as the other "latest report" fetchers.
+
+Verified for real: `mvn compile`/`mvn test` and `npm run build` both
+clean. Live backend testing via curl proved every case the design called
+for - a fresh user with 0 reports got 204 from both endpoints; after one
+`/api/match` call, both endpoints returned that single report's exact
+numbers (hand-verified against `GET /api/reports/{id}`'s own
+`jobReadiness` block); after three reports with deliberately different
+scores (51, 7, 60), `progress-trend` came back in the correct
+oldest-to-newest order regardless of insertion order and
+`dashboard-summary` reflected the latest (60/NEEDS_WORK) with the
+correct total (3). Live in-browser (Chrome, via claude-in-chrome):
+logged into the 3-report account and confirmed the Dashboard hero score/
+label/stat tiles and the Progress chart/table match those exact
+numbers; confirmed the light-theme palette on both screens; logged into
+a fresh 0-report account and confirmed both screens' empty states and
+their "Go to Analyze Resume" CTAs; logged into a 1-report account and
+confirmed the chart renders a single point (not a broken line) with a
+matching one-row table; console was clean (no errors) throughout.
+Regression-checked all 8 existing real screens (Analyze Resume + its
+History tab, Skill Roadmap, Interview Prep, Career Fit, Compare Jobs'
+empty state, and My Resumes) afterward since `Sidebar.jsx` and
+`App.jsx` are shared files this phase also edited - all still work
+exactly as before.
+
 ## Feature Roadmap (Phase 13-27)
 
 - **Phase 13 - ATS Compatibility Analyzer**: rule-based checks for
