@@ -710,6 +710,34 @@ afterward since this phase edited the shared `api.js` - all still work
 exactly as before, and the Skill Roadmap/Interview Prep screens'
 on-screen data visibly matched the PDF's content for the same report.
 
+**Phase 26 (Full Testing Pass) complete - no bugs found, no code
+changes.** Systematic testing across everything built since the App
+Shell Migration (Phases 12-25), targeting bugs that only surface when
+already-shipped features coexist rather than re-verifying each phase in
+isolation again: a zero-state audit hitting Skill Roadmap, Interview
+Prep, Career Fit, Progress, Dashboard, and the Career Report PDF
+endpoint all at once on one fresh account; exact-boundary tests (5 vs.
+6 reports for Compare Jobs, 2 vs. 1/3 resume versions for Resume
+Version Comparison, a real 0-matched-skill GapReport read back through
+Job Readiness/Skill Roadmap/Interview Prep/the Career Report PDF);
+cross-feature isolation (confirmed, including a direct MySQL query
+against `gap_reports`/`resume_versions`, that a Resume Version
+Comparison run never leaves a trace in History or the Progress trend);
+an exhaustive ownership sweep (11 id-taking endpoints across both
+GapReport and ResumeVersion, including two mixed-ownership requests
+and a re-fetch proving a rejected `PUT`/`DELETE` was a true no-op, not
+a mutation hidden behind a 404); and the JWT-invalidation session edge
+case (corrupted the stored token mid-session, confirmed the next 401
+cleanly clears both `localStorage` keys and redirects to Auth, not a
+stuck UI). Full details, exact test data, and every pass/fail are in
+`TESTING.md`.
+
+56 scenarios verified, all passed on the first attempt - genuinely
+clean, not just untested. Closed with a full end-to-end regression
+across all 9 real screens/flows in both light and dark theme with a
+clean console, confirming this testing pass (and everything since
+Phase 22) introduced no regressions.
+
 ## Feature Roadmap (Phase 13-27)
 
 - **Phase 13 - ATS Compatibility Analyzer**: rule-based checks for
