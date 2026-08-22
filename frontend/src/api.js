@@ -247,6 +247,18 @@ export async function fetchProgressTrend() {
   return response.json()
 }
 
+// Phase 25: the combined Career Report PDF (Job Readiness Score, Skill
+// Gaps, Learning Roadmap, Interview Prep) for the user's most recent
+// report. No 204 case - this returns bytes, not JSON, so "no reports
+// yet" is a 404 with a plain-text reason that protectedFetch's existing
+// readErrorMessage handling surfaces as a normal error message, same as
+// every other validated endpoint - the caller shows that message instead
+// of downloading a broken file.
+export async function fetchCareerReportPdf() {
+  const response = await protectedFetch('/api/reports/latest/career-report-pdf')
+  return response.blob()
+}
+
 // Phase 23: compares exactly 2 of the user's own resume versions against
 // one ad-hoc jdText/requiredSkills pair - computed live, never saved as
 // a History entry (unlike POST /api/match).

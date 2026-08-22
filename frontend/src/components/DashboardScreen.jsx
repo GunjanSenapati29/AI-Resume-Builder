@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { fetchDashboardSummary } from '../api'
+import { fetchCareerReportPdf, fetchDashboardSummary } from '../api'
 import { formatDate } from '../dateFormat'
 import { STATUS_COLORS } from '../statusColors'
 
@@ -32,16 +32,48 @@ function StatTile({ label, value }) {
  * `summary` state: `undefined` while loading, `null` when the user has no
  * analyzed reports yet (204 - a normal empty state, not an error),
  * otherwise the real payload.
+ *
+ * Phase 25: "Download Career Report" fetches GET
+ * /api/reports/latest/career-report-pdf (Job Readiness Score, Skill
+ * Gaps, Learning Roadmap, and Interview Prep for the same most-recent
+ * report, combined into one PDF) as a blob, same download-via-blob
+ * approach GapReportScreen's existing PDF button already uses. Kept
+ * separate from that button (and from GapReportScreen entirely) since
+ * they're different documents at different scopes - one report's Gap
+ * Report vs. this account-wide career snapshot.
  */
 export default function DashboardScreen({ onGoToAnalyze, onGoToHistory }) {
   const [summary, setSummary] = useState(undefined)
   const [error, setError] = useState('')
+
+  const [downloadingReport, setDownloadingReport] = useState(false)
+  const [downloadError, setDownloadError] = useState('')
 
   useEffect(() => {
     fetchDashboardSummary()
       .then(setSummary)
       .catch((err) => setError(err.message))
   }, [])
+
+  async function handleDownloadCareerReport() {
+    setDownloadingReport(true)
+    setDownloadError('')
+    try {
+      const blob = await fetchCareerReportPdf()
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = 'career-report.pdf'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      setDownloadError(err.message)
+    } finally {
+      setDownloadingReport(false)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -106,7 +138,7 @@ export default function DashboardScreen({ onGoToAnalyze, onGoToHistory }) {
             <StatTile label="Last Analyzed" value={formatDate(summary.lastAnalyzedAt)} />
           </div>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={onGoToAnalyze}
@@ -121,7 +153,26 @@ export default function DashboardScreen({ onGoToAnalyze, onGoToHistory }) {
             >
               View History
             </button>
+            <button
+              type="button"
+              onClick={handleDownloadCareerReport}
+              disabled={downloadingReport}
+              className="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-5 py-2.5 text-sm font-bold text-text-primary transition-colors hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-accent active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {downloadingReport && (
+                <span
+                  aria-hidden="true"
+                  className="h-4 w-4 flex-none animate-spin rounded-full border-2 border-border-strong border-t-accent"
+                />
+              )}
+              {downloadingReport ? 'Preparing report...' : 'Download Career Report'}
+            </button>
           </div>
+          {downloadError && (
+            <p className="text-sm font-medium text-critical" role="alert">
+              {downloadError}
+            </p>
+          )}
         </>
       )}
     </div>

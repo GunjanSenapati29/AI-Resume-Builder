@@ -646,6 +646,70 @@ empty state, and My Resumes) afterward since `Sidebar.jsx` and
 `App.jsx` are shared files this phase also edited - all still work
 exactly as before.
 
+**Phase 25 (Smart PDF Career Report) complete.** A new
+`export/CareerReportPdfService.java` combines three EXISTING per-report
+views - the persisted Job Readiness Score/breakdown (Phase 16, read
+straight off the `GapReport` row), `LearningRoadmapService`'s live
+roadmap (Phase 17/18), and `InterviewQuestionService`'s live interview
+questions (Phase 19) - into one PDF, all three already scoped to the
+user's single most recent report. None of those three services' own
+logic changed; this only reads what they already produce and lays it
+out with the same manual word-wrap/pagination PDFBox technique
+`GapReportPdfService` established in Phase 9 - kept as its own copy
+(same reasoning Phase 22's `ResumeVersionPdfService` already used) since
+this document's section structure (score breakdown, then skill gaps,
+then roadmap, then interview questions) doesn't overlap with the
+single-report Gap Report layout. This is a new, separate combined
+document - NOT the "Future PDF Redesign Reference" visual redesign of
+the single Gap Report PDF that stays gated until all of Phases 13-27 are
+done.
+
+`GET /api/reports/latest/career-report-pdf` on `ReportController`
+follows the same `/latest/...` convention as the roadmap and
+interview-questions endpoints, but since it returns bytes rather than
+JSON, "no reports yet" is a 404 with a plain-text reason ("Analyze a
+resume first to generate a career report.") instead of the 204 those
+other routes use - `protectedFetch`'s existing error-message handling in
+`api.js` surfaces that text as a normal thrown error, so no new
+frontend error-handling path was needed.
+
+Frontend: a "Download Career Report" button added to `DashboardScreen.jsx`
+(Phase 24) alongside the existing quick links - bordered/secondary style
+like "View History", deliberately not the primary accent button (that
+stays "Analyze Resume"), with a real spinning-ring loading state inside
+the button while the PDF generates. Reuses the same fetch-as-blob +
+synthetic-`<a download>` pattern `GapReportScreen`'s existing single-report
+PDF button already uses. `GapReportScreen` itself was NOT touched - it
+keeps its existing PDF button unchanged, so the two differently-scoped
+downloads (one report vs. this account-wide career snapshot) never
+compete on the same screen.
+
+Verified for real: `mvn compile`/`mvn test` and `npm run build` both
+clean. Backend: generated the PDF for a user with zero reports (404,
+`Analyze a resume first...`) and for a real two-report account crafted
+to exercise every section at once - 4 matched skills, 3 missing skills
+recurring across both reports (so Phase 15 gave them a real IMPORTANT
+priority tier, not just a single-report default), and 1 underemphasized
+skill - then read the actual PDF bytes back (`Read` on the downloaded
+file, not just "a PDF downloaded") and hand-checked every section's
+numbers against that same report's `GET /api/reports/{id}` JSON: the
+34/100 Not Ready score and its four weighted components matched exactly,
+all three missing skills appeared in Skill Gaps tagged Important in the
+same order, the Learning Roadmap showed the correct curated project idea
+and official-docs link per skill (and the correct generic fallback for
+Kubernetes, which has neither), and Interview Prep listed exactly the 4
+matched skills with their real curated questions - plus pagination broke
+cleanly onto a second page with no orphaned section title. Live
+in-browser (Chrome): confirmed the button renders in the bordered/
+secondary style next to "Analyze Resume"/"View History" in both light
+and dark theme, clicked it and confirmed the PDF actually downloaded
+(network request returned 200, Chrome opened the file), and confirmed a
+clean console throughout. Regression-checked Analyze Resume, Progress,
+Skill Roadmap, Interview Prep, Career Fit, Compare Jobs, and My Resumes
+afterward since this phase edited the shared `api.js` - all still work
+exactly as before, and the Skill Roadmap/Interview Prep screens'
+on-screen data visibly matched the PDF's content for the same report.
+
 ## Feature Roadmap (Phase 13-27)
 
 - **Phase 13 - ATS Compatibility Analyzer**: rule-based checks for

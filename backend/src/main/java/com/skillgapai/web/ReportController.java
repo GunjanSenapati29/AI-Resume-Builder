@@ -8,12 +8,14 @@ import com.skillgapai.dto.InterviewQuestionsView;
 import com.skillgapai.dto.LearningRoadmapView;
 import com.skillgapai.dto.ProgressPointView;
 import com.skillgapai.dto.RoleRecommendationsView;
+import com.skillgapai.export.CareerReportPdfService;
 import com.skillgapai.export.GapReportPdfService;
 import com.skillgapai.interview.InterviewQuestionService;
 import com.skillgapai.roadmap.LearningRoadmapService;
 import com.skillgapai.service.ReportService;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -66,6 +68,12 @@ import java.util.Optional;
  * /api/reports/progress-trend - read-only aggregations of data every
  * GapReport already stores, same 204-means-no-reports-yet convention as
  * Learning Roadmap/Interview Prep above.
+ *
+ * Phase 25: GET /api/reports/latest/career-report-pdf - combines the Job
+ * Readiness Score, Skill Gaps, Learning Roadmap, and Interview Prep
+ * questions for the user's most recent report into one PDF. Since this
+ * returns bytes rather than JSON, "no reports yet" is a 404 with a plain
+ * text reason instead of the 204 the other /latest/... routes use.
  */
 @RestController
 @RequestMapping("/api/reports")
@@ -73,16 +81,19 @@ public class ReportController {
 
     private final ReportService reportService;
     private final GapReportPdfService pdfService;
+    private final CareerReportPdfService careerReportPdfService;
     private final LearningRoadmapService learningRoadmapService;
     private final InterviewQuestionService interviewQuestionService;
     private final CareerRoleService careerRoleService;
 
     public ReportController(ReportService reportService, GapReportPdfService pdfService,
+                             CareerReportPdfService careerReportPdfService,
                              LearningRoadmapService learningRoadmapService,
                              InterviewQuestionService interviewQuestionService,
                              CareerRoleService careerRoleService) {
         this.reportService = reportService;
         this.pdfService = pdfService;
+        this.careerReportPdfService = careerReportPdfService;
         this.learningRoadmapService = learningRoadmapService;
         this.interviewQuestionService = interviewQuestionService;
         this.careerRoleService = careerRoleService;
@@ -153,6 +164,21 @@ public class ReportController {
         return reportService.compareReports(parsedIds, currentUserEmail())
                 .<ResponseEntity<?>>map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/latest/career-report-pdf")
+    public ResponseEntity<?> getLatestCareerReportPdf() {
+        Optional<byte[]> pdf = careerReportPdfService.generateForLatestReport(currentUserEmail());
+        if (pdf.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Analyze a resume first to generate a career report.");
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment().filename("career-report.pdf").build().toString())
+                .body(pdf.get());
     }
 
     @GetMapping("/dashboard-summary")
